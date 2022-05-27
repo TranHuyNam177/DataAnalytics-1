@@ -2,9 +2,7 @@ from request.stock import *
 
 
 def run(
-    mlist:bool=True,
-    exchange:str='HOSE',
-    segment:str='all'
+    exchange:str='HOSE'
 ) \
         -> pd.DataFrame:
     """
@@ -12,10 +10,7 @@ def run(
     or down floor (fc_type='floor') in a given exchange of a given segment
     in n consecutive trading days
 
-    :param mlist: report margin list only (True) or not (False)
     :param exchange: allow values in fa.exchanges. Do not allow 'all'
-    :param segment: allow values in fa.segments or 'all'.
-    For mlist=False only, if mlist=True left as default
 
     :return: pd.DataFrame (columns: 'Ticker', 'Exchange', 'Consecutive Days'
     """
@@ -33,10 +28,10 @@ def run(
     special_room_series = internal.margin['special_room']
     total_room_series = internal.margin['total_room']
 
-    if mlist is True:
-        full_tickers = internal.mlist(exchanges=[exchange])
-    else:
-        full_tickers = fa.tickers(segment,exchange)
+    full_tickers = internal.mlist(exchanges=[exchange])
+
+    if not full_tickers:
+        return pd.DataFrame()
 
     records = []
     for ticker in full_tickers:

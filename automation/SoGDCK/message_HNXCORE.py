@@ -2,13 +2,12 @@ from automation.SoGDCK import *
 
 
 def create_dict():
-    # file_path = join(dirname(__file__), 'file', 'HNXCORE_TKCT_InfoGate.xlsx')
-    file_path = r'D:\HNXCORE_TKCT_InfoGate.xlsx'
+    file_path = join(dirname(__file__), 'file', 'HNXCORE_TKCT_InfoGate.xlsx')
     hnx_infogate_message = pd.read_excel(file_path, dtype={'Tag': object}).fillna('')
     hnx_infogate_message = hnx_infogate_message.drop_duplicates(ignore_index=True)
     # save InfoGate message dictionary to a pickle file
     message_dict = {x[0]: x[1:] for x in hnx_infogate_message.itertuples(index=False)}
-    with open(R'D:\DataAnalytics-1\automation\SoGDCK\file\message_dictionary.pickle', 'wb') as handle:
+    with open(join(dirname(__file__), 'file', 'message_dictionary.pickle'), 'wb') as handle:
         pickle.dump(message_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
     return message_dict
 

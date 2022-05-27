@@ -84,6 +84,8 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Users\namtran\AppData\Local\Program
 ###############################################################################
 
 import base64
+import struct
+import calendar
 
 ###############################################################################
 
