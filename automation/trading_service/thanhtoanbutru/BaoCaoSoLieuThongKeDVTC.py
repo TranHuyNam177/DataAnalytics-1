@@ -206,8 +206,8 @@ def run(
                 [relationship].[branch_id]
             FROM [relationship]
             WHERE [relationship].[date] = '{end_date}'
-            ) [r]
-            ON [r].[account_code] = [margin_outstanding].[account_code] 
+        ) [r]
+        ON [r].[account_code] = [margin_outstanding].[account_code] 
         WHERE 
             [margin_outstanding].[date] = '{end_date}' 
             AND [r].[branch_id] = '0111'

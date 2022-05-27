@@ -4,7 +4,7 @@ from datawarehouse import DELETE, INSERT
 
 # DONE
 def run(  # chạy daily sau batch cuối ngày
-    run_time=dt.datetime.now(),
+    run_time=None,
 ):
     start = time.time()
     info = get_info('daily',run_time)

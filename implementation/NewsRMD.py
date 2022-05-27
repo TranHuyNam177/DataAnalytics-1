@@ -1,7 +1,7 @@
 from implementation import TaskMonitor
 from request.stock import *
+from news_collector import newsrmd_fixed
 from news_collector import newsrmd
-
 
 @TaskMonitor
 def NewsRMD():
@@ -22,65 +22,66 @@ def NewsRMD():
     if dt.time(hour=12,minute=0,second=0)<=now.time()<=dt.time(hour=23,minute=59,second=59):
         time_point = now.replace(hour=10,minute=0,second=0,microsecond=0)
 
-    path = r'\\192.168.10.101\phs-storge-2018' \
-           r'\RiskManagementDept\RMD_Data' \
-           r'\Luu tru van ban\RMC Meeting 2018' \
-           r'\00. Meeting minutes\Data\News Update'
+    # path = r'\\192.168.10.101\phs-storge-2018' \
+    #        r'\RiskManagementDept\RMD_Data' \
+    #        r'\Luu tru van ban\RMC Meeting 2018' \
+    #        r'\00. Meeting minutes\Data\News Update'
+    path = r'C:\Users\namtran\Share Folder\Risk Management\Report'
     file_name = f'{time_string}.xlsx'
     file_path = fr'{path}\{file_name}'
 
     while True:
         try:
-            vsd_TCPH = newsrmd.vsd.tinTCPH()
+            vsd_TCPH = newsrmd_fixed.vsd.tinTCPH()
             break
-        except newsrmd.ignored_exceptions:
+        except newsrmd_fixed.ignored_exceptions:
             vsd_TCPH = pd.DataFrame()
             continue
-        except newsrmd.NoNewsFound:
+        except newsrmd_fixed.NoNewsFound:
             vsd_TCPH = pd.DataFrame()
             break
 
     while True:
         try:
-            vsd_TVBT = newsrmd.vsd.tinTVBT()
+            vsd_TVBT = newsrmd_fixed.vsd.tinTVBT()
             break
-        except newsrmd.ignored_exceptions:
+        except newsrmd_fixed.ignored_exceptions:
             vsd_TVBT = pd.DataFrame()
             continue
-        except newsrmd.NoNewsFound:
+        except newsrmd_fixed.NoNewsFound:
             vsd_TVBT = pd.DataFrame()
             break
 
     while True:
         try:
-            hnx_TCPH = newsrmd.hnx.tinTCPH()
+            hnx_TCPH = newsrmd_fixed.hnx.tinTCPH()
             break
-        except newsrmd.ignored_exceptions:
+        except newsrmd_fixed.ignored_exceptions:
             hnx_TCPH = pd.DataFrame()
             continue
-        except newsrmd.NoNewsFound:
+        except newsrmd_fixed.NoNewsFound:
             hnx_TCPH = pd.DataFrame()
             break
 
     while True:
         try:
-            hnx_tintuso = newsrmd.hnx.tintuso()
+            hnx_tintuso = newsrmd_fixed.hnx.tintuso()
             break
-        except newsrmd.ignored_exceptions:
+        except newsrmd_fixed.ignored_exceptions:
             hnx_tintuso = pd.DataFrame()
             continue
-        except newsrmd.NoNewsFound:
+        except newsrmd_fixed.NoNewsFound:
             hnx_tintuso = pd.DataFrame()
             break
 
     while True:
         try:
-            hose_tintonghop = newsrmd.hose.tintonghop()
+            hose_tintonghop = newsrmd_fixed.hose.tintonghop()
             break
-        except newsrmd.ignored_exceptions:
+        except newsrmd_fixed.ignored_exceptions:
             hose_tintonghop = pd.DataFrame()
             continue
-        except newsrmd.NoNewsFound:
+        except newsrmd_fixed.NoNewsFound:
             hose_tintonghop = pd.DataFrame()
             break
 
@@ -214,9 +215,11 @@ def NewsRMD():
                     hnx_tintuso_sheet.write(row+1,col,hnx_tintuso.iloc[row,col],regular_fmt)
 
     hose_tintonghop_sheet.set_column('A:A',18)
-    hose_tintonghop_sheet.set_column('B:D',7)
+    hose_tintonghop_sheet.set_column('B:B',10)
+    hose_tintonghop_sheet.set_column('C:D',7)
     hose_tintonghop_sheet.set_column('E:E',70)
     hose_tintonghop_sheet.set_column('F:F',80)
+    hose_tintonghop_sheet.set_column('G:G',80)
     hose_tintonghop_sheet.write_row('A1',hose_tintonghop,header_fmt)
     if not hose_tintonghop.empty:
         mask_hose_tintonghop = hose_tintonghop['Thời gian'].map(check_dt)

@@ -1,17 +1,14 @@
-import pandas as pd
-
 from automation.trading_service import *
 
-dept_folder = r'C:\Users\hiepdang\Shared Folder\Trading Service\Report\ThanhToanBuTru'
+dept_folder = r'C:\Users\namtran\Share Folder\Trading Service\Report\ThanhToanBuTru'
+
 
 def getBranchBroker(
-    x:str,
-    d:dt.datetime
-) -> pd.Series:
-
+        x: str,
+        d: dt.datetime
+) -> tuple:
     """
     This function return branch name and broker name given an account code or sub account
-
     :param x: either account_code or sub_auccount
     :param d: date to check the relationship
     """
@@ -26,9 +23,9 @@ def getBranchBroker(
         WHERE [relationship].[date] = '{d.strftime("%Y-%m-%d")}'
         """
 
-    if re.findall('[A-Z]',x): # account code
+    if re.findall('[A-Z]', x):  # account code
         sqlStatement += f" AND [relationship].[account_code] = '{x}'"
-    else: # sub account
+    else:  # sub account
         sqlStatement += f" AND [relationship].[sub_account] = '{x}'"
 
-    return pd.read_sql(sqlStatement,connect_DWH_CoSo).squeeze()
+    return tuple(pd.read_sql(sqlStatement, connect_DWH_CoSo).squeeze())

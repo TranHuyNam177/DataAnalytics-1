@@ -5,7 +5,7 @@ driver_RMD = '{SQL Server}'
 server_RMD = 'SRV-RPT'
 db_RMD = 'RiskDb'
 
-with open(r'C:\Users\hiepdang\Desktop\Passwords\DataBase\DataBase.txt') as file:
+with open(r'C:\Users\namtran\Desktop\Passwords\DataBase\DataBase.txt') as file:
     user,password = file.readlines()
     user = user.replace('\n','')
 

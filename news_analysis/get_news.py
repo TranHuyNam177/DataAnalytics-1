@@ -1,6 +1,3 @@
-import requests
-
-from request.stock import *
 from request import *
 
 
@@ -105,7 +102,7 @@ class cafef(__Base__):
             adapter = requests.adapters.HTTPAdapter(max_retries=retry)
             session.mount('https://',adapter)
             headers = {
-                'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36'
+                'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.88 Safari/537.36'
             }
             for u in self.urls:
                 print(u)
