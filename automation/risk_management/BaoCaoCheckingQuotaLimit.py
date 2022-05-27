@@ -81,14 +81,13 @@ def initiate(
 
 
 def run(
-        run_time=None
+        run_time=dt.datetime.now()
 ):
     start=time.time()
     info=get_info('daily', run_time)
     period=info['period']
     t0_date=info['end_date'].replace('.', '-')
-    # t1_date=BDATE(t0_date,-1)
-    t1_date = t0_date
+    t1_date=BDATE(t0_date,-1)
     t2_date=BDATE(t0_date,-2)
     folder_name=info['folder_name']
 
@@ -201,18 +200,11 @@ def run(
         'font_size':11,
         'font_name':'Calibri'
     })
-    text_center_format = workbook.add_format({
-        'align': 'center',
-        'valign': 'vbottom',
-        'font_size': 11,
-        'font_name': 'Calibri'
-    })
     number_format = workbook.add_format({
         'align': 'right',
         'valign': 'vbottom',
         'font_size': 11,
-        'font_name': 'Calibri',
-        'num_format': '#,##0.00'
+        'font_name': 'Calibri'
     })
     money_format=workbook.add_format({
         'align':'right',

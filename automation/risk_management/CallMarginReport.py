@@ -1,7 +1,6 @@
 from automation.risk_management import *
 from datawarehouse import BDATE
 
-
 """
 TK bị lệch ngày 29/04/2022
 1. 022C017132	0117000598	ĐINH TIÊN HOÀNG
@@ -49,18 +48,18 @@ và cột THIẾU HỤT
 
 
 def run(  # chạy hàng ngày
-    run_time=dt.datetime.now()
+        run_time=dt.datetime.now()
 ):
     start = time.time()
-    info = get_info('daily',run_time)
+    info = get_info('daily', run_time)
     period = info['period']
     t0_date = info['end_date']
-    t1_date = BDATE(t0_date,1)
+    t1_date = BDATE(t0_date, 1)
     folder_name = info['folder_name']
 
     # create folder
-    if not os.path.isdir(join(dept_folder,folder_name,period)):
-        os.mkdir((join(dept_folder,folder_name,period)))
+    if not os.path.isdir(join(dept_folder, folder_name, period)):
+        os.mkdir((join(dept_folder, folder_name, period)))
 
     ###################################################
     ###################################################
@@ -134,9 +133,9 @@ def run(  # chạy hàng ngày
     t1_year = t1_date[0:4]
     file_name = f'Call Margin Report on {t1_day} {t1_month} {t1_year}.xlsx'
     writer = pd.ExcelWriter(
-        join(dept_folder,folder_name,period,file_name),
+        join(dept_folder, folder_name, period, file_name),
         engine='xlsxwriter',
-        engine_kwargs={'options':{'nan_inf_to_errors':True}}
+        engine_kwargs={'options': {'nan_inf_to_errors': True}}
     )
     workbook = writer.book
 
@@ -147,40 +146,40 @@ def run(  # chạy hàng ngày
     # Format
     headers_format = workbook.add_format(
         {
-            'border':1,
-            'bold':True,
-            'align':'center',
-            'valign':'top',
-            'font_size':12,
-            'font_name':'Calibri',
-            'text_wrap':True
+            'border': 1,
+            'bold': True,
+            'align': 'center',
+            'valign': 'top',
+            'font_size': 12,
+            'font_name': 'Calibri',
+            'text_wrap': True
         }
     )
     text_left_format = workbook.add_format(
         {
-            'border':1,
-            'align':'left',
-            'valign':'vcenter',
-            'font_size':11,
-            'font_name':'Calibri'
+            'border': 1,
+            'align': 'left',
+            'valign': 'vcenter',
+            'font_size': 11,
+            'font_name': 'Calibri'
         }
     )
     stt_format = workbook.add_format(
         {
-            'border':1,
-            'align':'right',
-            'valign':'vcenter',
-            'font_size':11,
-            'font_name':'Calibri'
+            'border': 1,
+            'align': 'right',
+            'valign': 'vcenter',
+            'font_size': 11,
+            'font_name': 'Calibri'
         }
     )
     money_format = workbook.add_format(
         {
-            'border':1,
-            'align':'right',
-            'valign':'vcenter',
-            'font_size':11,
-            'font_name':'Calibri',
+            'border': 1,
+            'align': 'right',
+            'valign': 'vcenter',
+            'font_size': 11,
+            'font_name': 'Calibri',
             'num_format': '_(* #,##0_);_(* (#,##0);_(* "-"??_);_(@_)'
         }
     )
@@ -211,7 +210,7 @@ def run(  # chạy hàng ngày
             'valign': 'vcenter',
             'font_size': 11,
             'font_name': 'Calibri',
-            'num_format':'dd/mm/yyyy'
+            'num_format': 'dd/mm/yyyy'
         }
     )
 
@@ -253,28 +252,28 @@ def run(  # chạy hàng ngày
 
     worksheet = workbook.add_worksheet('Sheet1')
     worksheet.hide_gridlines(option=2)
-    worksheet.set_column('A:ZZ',18)
-    worksheet.set_column('A:A',4)
-    worksheet.set_column('B:B',16)
-    worksheet.set_column('D:D',27)
-    worksheet.set_column('G:G',28)
-    worksheet.set_column('I:J',13)
-    worksheet.set_column('L:L',19)
-    worksheet.set_column('N:N',22)
-    worksheet.set_column('P:P',18)
-    worksheet.set_column('R:R',12)
-    worksheet.set_column('T:U',11)
-    worksheet.set_column('V:V',8)
-    worksheet.set_column('W:W',18)
-    worksheet.set_column('AA:AC',0)
-    worksheet.set_row(0,37)
+    worksheet.set_column('A:ZZ', 18)
+    worksheet.set_column('A:A', 4)
+    worksheet.set_column('B:B', 16)
+    worksheet.set_column('D:D', 27)
+    worksheet.set_column('G:G', 28)
+    worksheet.set_column('I:J', 13)
+    worksheet.set_column('L:L', 19)
+    worksheet.set_column('N:N', 22)
+    worksheet.set_column('P:P', 18)
+    worksheet.set_column('R:R', 12)
+    worksheet.set_column('T:U', 11)
+    worksheet.set_column('V:V', 8)
+    worksheet.set_column('W:W', 18)
+    worksheet.set_column('AA:AC', 0)
+    worksheet.set_row(0, 37)
 
     for col in 'CEFHKMOQSXYZ':
-        worksheet.set_column(f'{col}:{col}',0)
+        worksheet.set_column(f'{col}:{col}', 0)
 
-    worksheet.write_row('A1',headers,headers_format)
-    worksheet.write_column('A2',np.arange(table.shape[0])+1,stt_format)
-    for colNum, colName in enumerate(table.columns,1):
+    worksheet.write_row('A1', headers, headers_format)
+    worksheet.write_column('A2', np.arange(table.shape[0]) + 1, stt_format)
+    for colNum, colName in enumerate(table.columns, 1):
         if colName.lower().startswith('tl'):
             fmt = decimal_format
         elif colName.lower().startswith('songay'):
@@ -285,16 +284,15 @@ def run(  # chạy hàng ngày
             fmt = date_format
         else:
             fmt = text_left_format
-        worksheet.write_column(1,colNum,table[colName],fmt)
+        worksheet.write_column(1, colNum, table[colName], fmt)
 
     ###########################################################################
     ###########################################################################
     ###########################################################################
 
     writer.close()
-    if __name__=='__main__':
-        print(f"{__file__.split('/')[-1].replace('.py','')}::: Finished")
+    if __name__ == '__main__':
+        print(f"{__file__.split('/')[-1].replace('.py', '')}::: Finished")
     else:
         print(f"{__name__.split('.')[-1]} ::: Finished")
-    print(f'Total Run Time ::: {np.round(time.time()-start,1)}s')
-
+    print(f'Total Run Time ::: {np.round(time.time() - start, 1)}s')

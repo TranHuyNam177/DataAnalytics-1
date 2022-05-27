@@ -13,7 +13,7 @@ Note: FLC tuy không có trong DB nhưng vẫn còn dư nợ của cty nên bạ
 
 
 def run(  # chạy hàng ngày
-    run_time=None
+        run_time=dt.datetime.now()
 ):
     start = time.time()
     info = get_info('daily', run_time)
@@ -34,17 +34,13 @@ def run(  # chạy hàng ngày
     file_path = join(dirname(__file__), 'excel_file', 'Tổng 2 sàn.xlsx')
     company_name = pd.read_excel(
         file_path,
-        usecols=['Mã chứng khoán thực hiện giao dịch ký quỹ','Tên Công ty (ENG)']
+        usecols=['Mã chứng khoán thực hiện giao dịch ký quỹ', 'Tên Công ty (ENG)']
     )
     company_name = company_name.set_index('Mã chứng khoán thực hiện giao dịch ký quỹ')
 
-    # convert list to tuple
-    def convert(lst):
-        return tuple(ele for ele in lst)
-
     # Get and process data
     lst_ticker = internal.mlist()
-    tickers = convert(lst_ticker)
+    tickers = tuple(lst_ticker)
 
     table = pd.read_sql(
         f"""
@@ -209,22 +205,22 @@ def run(  # chạy hàng ngày
     worksheet.set_column('J:J', 23)
     worksheet.set_row(3, 50)
 
-    for i in range(34,table.shape[0]+4):
+    for i in range(34, table.shape[0] + 4):
         worksheet.set_row(i, 0)
 
-    worksheet.write('C1',title_sheet,title_format)
-    worksheet.write('C2',sub_date,title_format)
-    worksheet.write_row('A4',headers,headers_format)
-    worksheet.write_column('A5',np.arange(table.shape[0])+1,number_format)
-    worksheet.write_column('B5',table['ticker'],text_left_format)
-    worksheet.write_column('C5',table['name'],text_left_format)
-    worksheet.write_column('D5',table['system_used_room'],money_format)
-    worksheet.write_column('E5',table['used_special_room'],money_format)
-    worksheet.write_column('F5',table['total_used_room'],money_format)
-    worksheet.write_column('G5',table['closed_price'],money_format)
-    worksheet.write_column('H5',table['max_price'],money_format)
-    worksheet.write_column('I5',table['ratio'],rat_format)
-    worksheet.write_column('J5',table['total_outstanding'],money_format)
+    worksheet.write('C1', title_sheet, title_format)
+    worksheet.write('C2', sub_date, title_format)
+    worksheet.write_row('A4', headers, headers_format)
+    worksheet.write_column('A5', np.arange(table.shape[0]) + 1, number_format)
+    worksheet.write_column('B5', table['ticker'], text_left_format)
+    worksheet.write_column('C5', table['name'], text_left_format)
+    worksheet.write_column('D5', table['system_used_room'], money_format)
+    worksheet.write_column('E5', table['used_special_room'], money_format)
+    worksheet.write_column('F5', table['total_used_room'], money_format)
+    worksheet.write_column('G5', table['closed_price'], money_format)
+    worksheet.write_column('H5', table['max_price'], money_format)
+    worksheet.write_column('I5', table['ratio'], rat_format)
+    worksheet.write_column('J5', table['total_outstanding'], money_format)
 
     ###########################################################################
     ###########################################################################
