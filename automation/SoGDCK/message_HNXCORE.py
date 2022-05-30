@@ -6,7 +6,7 @@ def create_dict():
     hnx_infogate_message = pd.read_excel(file_path, dtype={'Tag': object}).fillna('')
     hnx_infogate_message = hnx_infogate_message.drop_duplicates(ignore_index=True)
     # save InfoGate message dictionary to a pickle file
-    message_dict = {x[0]: x[1:] for x in hnx_infogate_message.itertuples(index=False)}
+    message_dict = {str(x[0]): x[1:] for x in hnx_infogate_message.itertuples(index=False)}
     with open(join(dirname(__file__), 'file', 'message_dictionary.pickle'), 'wb') as handle:
         pickle.dump(message_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
     return message_dict
