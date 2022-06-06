@@ -11,13 +11,14 @@ ignored_exceptions = (
     ElementNotInteractableException
 )
 
+
 def run(
     tickers:list,
     atdate:dt.datetime,
 ) -> pd.DataFrame:
 
     url_hose = 'https://finance.vietstock.vn/chung-khoan-phai-sinh/thong-ke-giao-dich.htm'
-    driver = webdriver.Chrome(executable_path=PATH)
+    driver = webdriver.Chrome(service=Service(PATH),options=Options())
     wait = WebDriverWait(driver,60,ignored_exceptions=ignored_exceptions)
     driver.get(url_hose)
 

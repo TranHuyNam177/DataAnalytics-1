@@ -6,9 +6,10 @@ dept_folder = r'C:\Users\namtran\Share Folder\Trading Service\Report\ThanhToanBu
 def getBranchBroker(
         x: str,
         d: dt.datetime
-) -> tuple:
+) -> pd.Series:
     """
     This function return branch name and broker name given an account code or sub account
+
     :param x: either account_code or sub_auccount
     :param d: date to check the relationship
     """
@@ -28,4 +29,4 @@ def getBranchBroker(
     else:  # sub account
         sqlStatement += f" AND [relationship].[sub_account] = '{x}'"
 
-    return tuple(pd.read_sql(sqlStatement, connect_DWH_CoSo).squeeze())
+    return pd.read_sql(sqlStatement, connect_DWH_CoSo).squeeze()

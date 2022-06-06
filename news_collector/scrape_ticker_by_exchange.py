@@ -21,7 +21,7 @@ def run(
         options.headless = True
 
     URL = 'https://priceboard.vcbs.com.vn/Priceboard/'
-    driver = webdriver.Chrome(executable_path=PATH,options=options)
+    driver = webdriver.Chrome(service=Service(PATH),options=Options())
     wait = WebDriverWait(driver,60,ignored_exceptions=ignored_exceptions)
     driver.get(URL)
 

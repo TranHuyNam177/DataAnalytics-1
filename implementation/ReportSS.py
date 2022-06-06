@@ -67,9 +67,14 @@ def SS_BaoCaoDoiChieuLaiTienGuiPhatSinh_p2():
     BaoCaoDoiChieuLaiTienGuiPhatSinh_p2.run(dt.datetime.now()-dt.timedelta(days=1))
 
 @TaskMonitor
+def SS_SaveTempData1():
+    from automation.trading_service.thanhtoanbutru import BaoCaoDoiChieuSoDuTaiKhoanKhachHang
+    BaoCaoDoiChieuSoDuTaiKhoanKhachHang.generateTempData()
+
+@TaskMonitor
 def SS_BaoCaoDoiChieuSoDuTaiKhoanKhachHang():
     from automation.trading_service.thanhtoanbutru import BaoCaoDoiChieuSoDuTaiKhoanKhachHang
-    BaoCaoDoiChieuSoDuTaiKhoanKhachHang.run(dt.datetime.now()-dt.timedelta(days=1))
+    BaoCaoDoiChieuSoDuTaiKhoanKhachHang.run()
 
 @TaskMonitor
 def SS_BaoCaoDoiChieuTTBTTienMuaBanChungKhoan():

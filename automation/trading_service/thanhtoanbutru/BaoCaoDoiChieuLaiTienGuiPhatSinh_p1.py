@@ -43,8 +43,8 @@ def __CheckAbnormal__(func):
             """
             outlook = Dispatch('outlook.application')
             mail = outlook.CreateItem(0)
-            mail.To = 'namtran@phs.vn'
-            mail.CC = 'huynam177199@gmail.com'
+            mail.To = 'hiepdang@phs.vn'
+            mail.CC = 'hiepdang@phs.vn'
             mail.Subject = f"Dữ liệu bất thường {dt.datetime.now().strftime('%d.%m.%Y')}"
             mail.HTMLBody = html_str
             mail.Send()
@@ -126,12 +126,14 @@ def run(  # chạy hàng ngày
                     [sub_account_deposit]
                 WHERE
                     [sub_account_deposit].[date] = '{t0_date}'
-        )
-        SELECT 
-            [final].*,
-            ROUND([final].[interest_actu],2) - ROUND([final].[interest_calc],2) [diff]
-        FROM (
-            SELECT
+            )
+          
+            SELECT 
+                [final].*,
+                ROUND([final].[interest_actu],2) - ROUND([final].[interest_calc],2) [diff]
+              
+            FROM (
+                SELECT
                 [info].[account_code],
                 [info].[account_type],
                 [info].[sub_account],
@@ -153,9 +155,11 @@ def run(  # chạy hàng ngày
                 ON [info].[sub_account] = [interest_paid].[sub_account]
             LEFT JOIN [balance]
                 ON [info].[sub_account] = [balance].[sub_account]
-        ) [final]
+            ) [final]
+              
         WHERE
             [final].[interest_actu] <> 0 OR [final].[interest_calc] <> 0
+          
         """,
         connect_DWH_CoSo
     )

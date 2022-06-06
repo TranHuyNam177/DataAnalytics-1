@@ -30,12 +30,13 @@ def run(
                 FROM [rdt0121]
                 WHERE [rdt0121].[date] BETWEEN '{bdate(t,-1)}' AND '{t}'
                 GROUP BY [rdt0121].[date]
-            )
-            SELECT [t].[balance] FROM [t]
-            WHERE [t].[date] = (SELECT MAX([t].[date]) FROM [t])
+                )
+                SELECT [t].[balance] FROM [t]
+                WHERE [t].[date] = (SELECT MAX([t].[date]) FROM [t]
+                )
             """,
-            connect_DWH_PhaiSinh
-        ).squeeze()
+                connect_DWH_PhaiSinh
+            ).squeeze()
 
     o_balance = get_cash_balance_at_vsd(start_date)
     c_balance = get_cash_balance_at_vsd(end_date)

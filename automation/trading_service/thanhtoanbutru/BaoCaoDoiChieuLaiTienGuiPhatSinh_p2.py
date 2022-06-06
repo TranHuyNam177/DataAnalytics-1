@@ -124,7 +124,7 @@ def run(
             [final].[interest_actu] <> 0 OR [final].[interest_calc] <> 0
             
         """,
-        connect_DWH_CoSo
+            connect_DWH_CoSo
     )
 
     ###################################################
