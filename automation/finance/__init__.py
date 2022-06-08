@@ -726,7 +726,7 @@ class SCSB(Base):
             manualCAPTCHA = self.__GetCaptchaFromMail__(captchaElement)
             firstGO(manualCAPTCHA)
             secondGO()
-        except (selenium.common.exceptions.NoAlertPresentException,): # Màn hình login đầu tiên thành công
+        except (NoAlertPresentException,): # Màn hình login đầu tiên thành công
             secondGO()
 
         return self
