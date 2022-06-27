@@ -1,9 +1,7 @@
 from request.stock import *
 
-
 class NoNewsFound(Exception):
     pass
-
 
 class vsd:
 
@@ -33,7 +31,7 @@ class vsd:
         now = dt.datetime.now()
         fromtime = now
         url = 'https://vsd.vn/vi/alo/-f-_bsBS4BBXga52z2eexg'
-        driver = webdriver.Chrome(service=Service(self.PATH),options=Options())
+        driver = webdriver.Chrome(executable_path=self.PATH)
         driver.get(url)
         driver.maximize_window()
         keywords = [
@@ -63,10 +61,10 @@ class vsd:
                     tag_wait = WebDriverWait(h3_tag,5,ignored_exceptions=self.ignored_exceptions)
                     sub_url = tag_wait.until(EC.presence_of_element_located((By.TAG_NAME,'a'))).get_attribute('href')
                     news_urls += [f'=HYPERLINK("{sub_url}","Link")']
-                    news_time_ = tag_.find_element(By.TAG_NAME, 'div').text
+                    news_time_ = tag_.find_element_by_tag_name('div').text
                     news_time_ = dt.datetime.strptime(news_time_[-21:],'%d/%m/%Y - %H:%M:%S')
                     news_time += [news_time_]
-                    sub_driver = webdriver.Chrome(service=Service(self.PATH),options=Options())
+                    sub_driver = webdriver.Chrome(executable_path=self.PATH)
                     sub_driver.get(sub_url)
                     sub_driver_wait = WebDriverWait(sub_driver,5,ignored_exceptions=self.ignored_exceptions)
                     noidung_elem = sub_driver_wait.until(EC.presence_of_element_located((By.CLASS_NAME,'col-md-12')))
@@ -85,7 +83,7 @@ class vsd:
             # Turn Page
             time.sleep(1)
             button_row = driver_wait.until(EC.presence_of_element_located((By.ID,'d_number_of_page')))
-            button_elems = button_row.find_elements(By.XPATH, ".//*")
+            button_elems = button_row.find_elements_by_xpath(".//*")
             nextpage_button = button_elems[-3]
             nextpage_button.click()
 
@@ -118,6 +116,7 @@ class vsd:
 
         return output_table
 
+
     def tinTVLK(self,num_hours: int = 48) -> pd.DataFrame:
 
         """
@@ -133,7 +132,7 @@ class vsd:
         fromtime = now
 
         url = 'https://www.vsd.vn/vi/alc/4'
-        driver = webdriver.Chrome(service=Service(self.PATH),options=Options())
+        driver = webdriver.Chrome(executable_path=self.PATH)
         driver.get(url)
         driver.maximize_window()
 
@@ -164,12 +163,12 @@ class vsd:
                 check_2 = [word in txt for word in keywords]
                 if all(check_1) and any(check_2):
                     news_headlines.append(txt)
-                    sub_url = h3_tag.find_element(By.TAG_NAME, 'a').get_attribute('href')
+                    sub_url = h3_tag.find_element_by_tag_name('a').get_attribute('href')
                     news_urls.append(f'=HYPERLINK("{sub_url}","Link")')
-                    news_time_ = tag_.find_element(By.TAG_NAME, 'div').text
+                    news_time_ = tag_.find_element_by_tag_name('div').text
                     news_time_ = dt.datetime.strptime(news_time_[-21:],'%d/%m/%Y - %H:%M:%S')
                     news_time.append(news_time_)
-                    sub_driver = webdriver.Chrome(service=Service(self.PATH),options=Options())
+                    sub_driver = webdriver.Chrome(executable_path=self.PATH)
                     sub_driver.get(sub_url)
                     sub_driver_wait = WebDriverWait(sub_driver,5,ignored_exceptions=self.ignored_exceptions)
                     content = sub_driver_wait.until(EC.presence_of_element_located((By.CLASS_NAME,'col-md-12'))).text
@@ -218,7 +217,6 @@ class vsd:
 
         return output_table
 
-
 class hnx:
 
     def __init__(self):
@@ -248,7 +246,7 @@ class hnx:
         now = dt.datetime.now()
         from_time = now
 
-        driver = webdriver.Chrome(service=Service(self.PATH),options=Options())
+        driver = webdriver.Chrome(executable_path=self.PATH)
 
         url = 'https://www.hnx.vn/thong-tin-cong-bo-ny-hnx.html'
         driver.get(url)
@@ -302,9 +300,9 @@ class hnx:
                     continue
 
                 title_no = ticker_title_inpage.index(ticker_title)+1
-                titles.append(driver.find_element(By.XPATH, f"//*[@id='_tableDatas']/tbody/tr[{title_no}]/td[4]").text)
-                times.append(driver.find_element(By.XPATH, f"//*[@id='_tableDatas']/tbody/tr[{title_no}]/td[2]").text)
-                tickers.append(driver.find_element(By.XPATH, f"//*[@id='_tableDatas']/tbody/tr[{title_no}]/td[3]").text)
+                titles.append(driver.find_element_by_xpath(f"//*[@id='_tableDatas']/tbody/tr[{title_no}]/td[4]").text)
+                times.append(driver.find_element_by_xpath(f"//*[@id='_tableDatas']/tbody/tr[{title_no}]/td[2]").text)
+                tickers.append(driver.find_element_by_xpath(f"//*[@id='_tableDatas']/tbody/tr[{title_no}]/td[3]").text)
                 # open popup window:
                 click_obj = title_elems[title_no-1]
                 click_obj.click()
@@ -313,14 +311,14 @@ class hnx:
                 popup_content = wait.until(EC.presence_of_element_located((By.XPATH,"//div[@class='Box-Noidung']")))
                 content = popup_content.text
                 box_text.append(content)
-                link_elems = driver.find_elements(By.XPATH, "//div[@class='divLstFileAttach']/p/a")
+                link_elems = driver.find_elements_by_xpath("//div[@class='divLstFileAttach']/p/a")
                 links.append([link.get_attribute('href') for link in link_elems])
 
                 # close popup windows
                 wait.until(EC.element_to_be_clickable((By.XPATH,'//*[@id="divViewDetailArticles"]/*/input'))).click()
                 time.sleep(1)
                 # check time
-                from_time = driver.find_element(By.XPATH, "//*[@id='_tableDatas']/tbody/tr[10]/td[2]").text
+                from_time = driver.find_element_by_xpath("//*[@id='_tableDatas']/tbody/tr[10]/td[2]").text
                 from_time = dt.datetime.strptime(from_time,'%d/%m/%Y %H:%M')
 
             # next page
@@ -353,9 +351,9 @@ class hnx:
                 else:
                     continue
                 title_no = ticker_title_inpage.index(ticker_title)+1
-                titles.append(driver.find_element(By.XPATH, f"//*[@id='_tableDatas']/tbody/tr[{title_no}]/td[4]").text)
-                times.append(driver.find_element(By.XPATH, f"//*[@id='_tableDatas']/tbody/tr[{title_no}]/td[2]").text)
-                tickers.append(driver.find_element(By.XPATH, f"//*[@id='_tableDatas']/tbody/tr[{title_no}]/td[3]").text)
+                titles.append(driver.find_element_by_xpath(f"//*[@id='_tableDatas']/tbody/tr[{title_no}]/td[4]").text)
+                times.append(driver.find_element_by_xpath(f"//*[@id='_tableDatas']/tbody/tr[{title_no}]/td[2]").text)
+                tickers.append(driver.find_element_by_xpath(f"//*[@id='_tableDatas']/tbody/tr[{title_no}]/td[3]").text)
 
                 # open popup window:
                 click_obj = title_elems[title_no-1]
@@ -367,15 +365,15 @@ class hnx:
                 content = popup_content.text
                 if content in ['.','',' ']:  # nếu có link, ko có nội dung
                     box_text.append('')
-                    link_elems = driver.find_elements(By.XPATH, "//div[@class='divLstFileAttach']/p/a")
+                    link_elems = driver.find_elements_by_xpath("//div[@class='divLstFileAttach']/p/a")
                     links.append([link.get_attribute('href') for link in link_elems])
                 else:  # nếu có nội dung, ko có link
                     links.append('')
                     box_text.append(content)
-                wait.until(EC.element_to_be_clickable((By.XPATH, "//*[@id='divViewDetailArticles']/*/input"))).click()
+                wait.until(EC.element_to_be_clickable((By.XPATH,"//*[@id='divViewDetailArticles']/*/input"))).click()
                 time.sleep(1)
                 # check time
-                fromtime = driver.find_element(By.XPATH, "//*[@id='_tableDatas']/tbody/tr[10]/td[2]").text
+                fromtime = driver.find_element_by_xpath("//*[@id='_tableDatas']/tbody/tr[10]/td[2]").text
                 fromtime = dt.datetime.strptime(fromtime,'%d/%m/%Y %H:%M')
 
             wait.until(EC.element_to_be_clickable((By.XPATH,"//*[@id='next']"))).click()
@@ -416,7 +414,6 @@ class hnx:
         print(f'Finished ::: Total execution time: {int(time.time()-start_time)}s\n')
 
         return df
-
 
 class hose:
 
@@ -648,7 +645,6 @@ class hose:
         print(f'Finished ::: Total execution time: {int(time.time()-start_time)}s\n')
 
         return output_table
-
 
 vsd = vsd()
 hnx = hnx()

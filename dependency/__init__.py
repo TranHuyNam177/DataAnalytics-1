@@ -43,8 +43,6 @@ import zeep
 from zeep import Client
 import threading
 import traceback
-import warnings
-import pickle
 
 ###############################################################################
 
@@ -79,7 +77,7 @@ from sklearn.decomposition import PCA
 ###############################################################################
 
 import pytesseract
-pytesseract.pytesseract.tesseract_cmd = r'C:\Users\namtran\AppData\Local\Programs\Tesseract-OCR\tesseract.exe'
+pytesseract.pytesseract.tesseract_cmd = join(dirname(__file__),'tesseract','tesseract')
 
 ###############################################################################
 
@@ -92,26 +90,23 @@ import calendar
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.common.exceptions import NoSuchFrameException
+from selenium.common.exceptions import NoSuchWindowException
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import StaleElementReferenceException
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import ElementNotInteractableException
-from selenium.common.exceptions import WebDriverException
 from selenium.common.exceptions import ElementClickInterceptedException
-from selenium.common.exceptions import NoSuchWindowException
 from selenium.common.exceptions import NoAlertPresentException
-from selenium.common.exceptions import NoSuchFrameException
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait, Select
+from selenium.webdriver.support.ui import WebDriverWait,Select
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 
 import scrapy
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 import lxml
-import html5lib
 
 ###############################################################################
 

@@ -21,84 +21,84 @@ def run(
 
     summary = pd.read_sql(
         f"""
-            WITH
-            [FlagTable] AS (
-            SELECT 
-                [ao].[account_type] [Type],
-                CASE 
-                    WHEN [ao].[account_type] = N'Cá nhân trong nước' THEN 2
-                    WHEN [ao].[account_type] = N'Tổ chức trong nước' THEN 3
-                    WHEN [ao].[account_type] = N'Cá nhân nước ngoài' THEN 5
-                    WHEN [ao].[account_type] = N'Tổ chức nước ngoài' THEN 6
-                END [Number],
-                CASE WHEN [ao].[date_of_open] BETWEEN '{start_date}' AND '{end_date}' THEN 1 ELSE 0 END [Open],
-                CASE WHEN [ac].[date_of_close] BETWEEN '{start_date}' AND '{end_date}' THEN 1 ELSE 0 END [Close]
-            FROM [account] [ao] FULL JOIN [account] [ac] ON [ao].[account_code] = [ac].[account_code]
-            WHERE [ao].[account_type] IN (N'Cá nhân trong nước',N'Tổ chức trong nước',N'Cá nhân nước ngoài',N'Tổ chức nước ngoài')
-            ),
-            [AggregateTable] AS (
-            SELECT 
-                [FlagTable].[Number],
-                [FlagTable].[Type],
-                SUM([FlagTable].[Open]) [Open],
-                SUM([FlagTable].[Close]) [Close]
-            FROM [FlagTable]
-            GROUP BY [FlagTable].[Type], [FlagTable].[Number]
-            ),
-            [Change] AS (
+                WITH
+                [FlagTable] AS (
                 SELECT 
-                    1 [Number], 
-                    N'Trong nước' [Type], 
-                    SUM([AggregateTable].[Open]) [Open], 
-                    SUM([AggregateTable].[Close]) [Close] 
-                FROM [AggregateTable] WHERE [AggregateTable].[Type] IN (N'Cá nhân trong nước',N'Tổ chức trong nước')
-                UNION 
-                SELECT *
-                FROM [AggregateTable]
-                UNION
+                    [ao].[account_type] [Type],
+                    CASE 
+                        WHEN [ao].[account_type] = N'Cá nhân trong nước' THEN 2
+                        WHEN [ao].[account_type] = N'Tổ chức trong nước' THEN 3
+                        WHEN [ao].[account_type] = N'Cá nhân nước ngoài' THEN 5
+                        WHEN [ao].[account_type] = N'Tổ chức nước ngoài' THEN 6
+                    END [Number],
+                    CASE WHEN [ao].[date_of_open] BETWEEN '{start_date}' AND '{end_date}' THEN 1 ELSE 0 END [Open],
+                    CASE WHEN [ac].[date_of_close] BETWEEN '{start_date}' AND '{end_date}' THEN 1 ELSE 0 END [Close]
+                FROM [account] [ao] FULL JOIN [account] [ac] ON [ao].[account_code] = [ac].[account_code]
+                WHERE [ao].[account_type] IN (N'Cá nhân trong nước',N'Tổ chức trong nước',N'Cá nhân nước ngoài',N'Tổ chức nước ngoài')
+                ),
+                [AggregateTable] AS (
                 SELECT 
-                    4 [Number], 
-                    N'Nước ngoài' [Type], 
-                    SUM([AggregateTable].[Open]) [Open], 
-                    SUM([AggregateTable].[Close]) [Close]
-                FROM [AggregateTable] WHERE [AggregateTable].[Type] IN (N'Cá nhân nước ngoài',N'Tổ chức nước ngoài')
-                UNION 
+                    [FlagTable].[Number],
+                    [FlagTable].[Type],
+                    SUM([FlagTable].[Open]) [Open],
+                    SUM([FlagTable].[Close]) [Close]
+                FROM [FlagTable]
+                GROUP BY [FlagTable].[Type], [FlagTable].[Number]
+                ),
+                [Change] AS (
+                    SELECT 
+                        1 [Number], 
+                        N'Trong nước' [Type], 
+                        SUM([AggregateTable].[Open]) [Open], 
+                        SUM([AggregateTable].[Close]) [Close] 
+                    FROM [AggregateTable] WHERE [AggregateTable].[Type] IN (N'Cá nhân trong nước',N'Tổ chức trong nước')
+                    UNION 
+                    SELECT *
+                    FROM [AggregateTable]
+                    UNION
+                    SELECT 
+                        4 [Number], 
+                        N'Nước ngoài' [Type], 
+                        SUM([AggregateTable].[Open]) [Open], 
+                        SUM([AggregateTable].[Close]) [Close]
+                    FROM [AggregateTable] WHERE [AggregateTable].[Type] IN (N'Cá nhân nước ngoài',N'Tổ chức nước ngoài')
+                    UNION 
+                    SELECT 
+                        7 [Number], 
+                        N'Tổng Cộng' [Type], 
+                        SUM([AggregateTable].[Open]) [Open], 
+                        SUM([AggregateTable].[Close]) [Close]
+                    FROM [AggregateTable]
+                ),
+                [tempEnd] AS (
+                    SELECT 
+                        COUNT([account].[account_code]) [count], 
+                        [account].[account_type]
+                    FROM [account]
+                    WHERE 
+                        [account].[date_of_open] <= '{end_date}'
+                        AND ([account].[date_of_close] IS NULL 
+                            OR ([account].[date_of_close] > '{end_date}' AND [account].[date_of_close] != '2099-12-31')
+                        ) -- mot so tai khoan dong rat lau roi duoc gan ngay dong la ngay nay
+                        AND [account].[account_type] IN (N'Cá nhân trong nước',N'Tổ chức trong nước',N'Cá nhân nước ngoài',N'Tổ chức nước ngoài')
+                    GROUP BY [account].[account_type]
+                ),
+                [End] AS (
+                    SELECT * FROM [tempEnd]
+                    UNION SELECT SUM([tempEnd].[count]) [count], N'Trong nước' FROM [tempEnd] WHERE [tempEnd].[account_type] IN (N'Cá nhân trong nước',N'Tổ chức trong nước')
+                    UNION SELECT SUM([tempEnd].[count]) [count], N'Nước ngoài' FROM [tempEnd] WHERE [tempEnd].[account_type] IN (N'Cá nhân nước ngoài',N'Tổ chức nước ngoài')
+                    UNION SELECT SUM([tempEnd].[count]) [count], N'Tổng Cộng' FROM [tempEnd]
+                )
                 SELECT 
-                    7 [Number], 
-                    N'Tổng Cộng' [Type], 
-                    SUM([AggregateTable].[Open]) [Open], 
-                    SUM([AggregateTable].[Close]) [Close]
-                FROM [AggregateTable]
-            ),
-            [tempEnd] AS (
-                SELECT 
-                    COUNT([account].[account_code]) [count], 
-                    [account].[account_type]
-                FROM [account]
-                WHERE 
-                    [account].[date_of_open] <= '{end_date}'
-                    AND ([account].[date_of_close] IS NULL 
-                        OR ([account].[date_of_close] > '{end_date}' AND [account].[date_of_close] != '2099-12-31')
-                    ) -- mot so tai khoan dong rat lau roi duoc gan ngay dong la ngay nay
-                    AND [account].[account_type] IN (N'Cá nhân trong nước',N'Tổ chức trong nước',N'Cá nhân nước ngoài',N'Tổ chức nước ngoài')
-                GROUP BY [account].[account_type]
-            ),
-            [End] AS (
-                SELECT * FROM [tempEnd]
-                UNION SELECT SUM([tempEnd].[count]) [count], N'Trong nước' FROM [tempEnd] WHERE [tempEnd].[account_type] IN (N'Cá nhân trong nước',N'Tổ chức trong nước')
-                UNION SELECT SUM([tempEnd].[count]) [count], N'Nước ngoài' FROM [tempEnd] WHERE [tempEnd].[account_type] IN (N'Cá nhân nước ngoài',N'Tổ chức nước ngoài')
-                UNION SELECT SUM([tempEnd].[count]) [count], N'Tổng Cộng' FROM [tempEnd]
-            )
-            SELECT 
-                COALESCE([Change].[Type],[End].[account_type]) [Type],
-                [End].[count] + [Change].[Close] - [Change].[Open] [Start],
-                [Change].[Open],
-                [Change].[Close],
-                [End].[count] [End]
-            FROM [Change] 
-            FULL JOIN [End] ON [End].[account_type] = [Change].[Type]
-            ORDER BY [Change].[Number]
-        """
+                    COALESCE([Change].[Type],[End].[account_type]) [Type],
+                    [End].[count] + [Change].[Close] - [Change].[Open] [Start],
+                    [Change].[Open],
+                    [Change].[Close],
+                    [End].[count] [End]
+                FROM [Change] 
+                FULL JOIN [End] ON [End].[account_type] = [Change].[Type]
+                ORDER BY [Change].[Number]
+            """
         ,
         connect_DWH_CoSo
     )
@@ -434,15 +434,15 @@ def run(
     sheet_tonghop.merge_range('A10:A11','STT',header_format)
     sheet_tonghop.merge_range('B10:B11','KHÁCH HÀNG',header_format)
     sheet_tonghop.merge_range('C10:F10','SỐ LƯỢNG TÀI KHOẢN',header_format)
-    sheet_tonghop.write_row('C11',['Đầu kỳ','Mở trong kỳ','Đóng trong kỳ','Cuối kỳ'],header_format)
+    sheet_tonghop.write_row('C11',['Đầu kỳ','Mở trong tháng','Đóng trong tháng','Cuối kỳ'],header_format)
     sheet_tonghop.write_column('A12',['','1','2','','1','2',''],stt_column_format)
     sheet_tonghop.write('A12','I',stt_heading_format)
     sheet_tonghop.write('A15','II',stt_heading_format)
-    sheet_tonghop.write('B12','Trong nước',header_cell_format)
-    sheet_tonghop.write('B15','Nước ngoài',header_cell_format)
+    sheet_tonghop.write('B12','TRONG NƯỚC',header_cell_format)
+    sheet_tonghop.write('B15','NƯỚC NGOÀI',header_cell_format)
     sheet_tonghop.write_column('B13',['     Cá nhân','     Tổ chức'],normal_cell_format)
     sheet_tonghop.write_column('B16',['     Cá nhân','     Tổ chức'],normal_cell_format)
-    sheet_tonghop.write('B18','Tổng cộng',header_cell_format)
+    sheet_tonghop.write('B18','TỔNG CỘNG',header_cell_format)
 
     cols = ['Start', 'Open', 'Close', 'End']
     sheet_tonghop.write_row('C12', summary.loc[summary['Type'] == 'Trong nước', cols].squeeze(), header_value)
@@ -520,22 +520,20 @@ def run(
     sheet_motaikhoan.set_column('F:F',12)
     sheet_motaikhoan.set_column('G:G',30)
     sheet_motaikhoan.set_column('H:J',12)
-    sheet_motaikhoan.set_column('K:M',10)
+    sheet_motaikhoan.set_column('K:K',10)
     sheet_motaikhoan.set_row(0,36)
     sheet_motaikhoan.merge_range('A1:M1','Danh sách khách hàng mở tài khoản',sup_title_format)
     headers = [
         'STT',
         'Tên khách hàng',
         'Mã TK',
-        'Số CMND/ Hộ chiếu/Giấy ĐKKD',
+        'Số CMND/ CCCD/ Hộ chiếu/ Giấy ĐKKD',
         'Địa chỉ',
         'Ngày cấp',
         'Nơi cấp',
         'Loại hình',
         'Ngày mở',
         'Quốc tịch',
-        'Cấp lại mới',
-        'Chức vụ',
         'Ghi chú',
     ]
     sheet_motaikhoan.write_row('A2',headers,header_format)
@@ -553,8 +551,6 @@ def run(
     sheet_motaikhoan.write_column('I4',account_open['date_of_open'],date_format)
     sheet_motaikhoan.write_column('J4',account_open['nationality'],text_center_format)
     sheet_motaikhoan.write_column('K4',['']*account_open.shape[0],text_center_format)
-    sheet_motaikhoan.write_column('L4',['']*account_open.shape[0],text_center_format)
-    sheet_motaikhoan.write_column('M4',account_open['remark'],text_center_format)
 
     ###########################################################################
     ###########################################################################
@@ -621,20 +617,20 @@ def run(
     sheet_dongtaikhoan.set_column('H:L',12)
     sheet_dongtaikhoan.set_default_row(27)  # set all row height = 27
     sheet_dongtaikhoan.set_row(0,36)
-    sheet_dongtaikhoan.set_row(1,42)
+    sheet_dongtaikhoan.set_row(1,51)
     sheet_dongtaikhoan.set_row(2,15)
     sheet_dongtaikhoan.merge_range('A1:L1','Danh sách khách hàng đóng tài khoản',sup_title_format)
     headers = [
         'STT',
         'Tên khách hàng',
-        'Mã TK',
-        'Số CMND/ Hộ chiếu/Giấy ĐKKD',
+        'Mã tài khoản',
+        'Số CMND/ CCCD/ Hộ chiếu/ Giấy ĐKKD',
         'Địa chỉ',
         'Ngày cấp',
         'Nơi cấp',
         'Loại hình',
-        'Ngày mở',
-        'Ngày đóng',
+        'Ngày mở TK',
+        'Ngày đóng TK',
         'Quốc tịch',
         'Ghi chú',
     ]
@@ -715,27 +711,28 @@ def run(
 
     sheet_thaydoithongtin.set_column('A:A',4)
     sheet_thaydoithongtin.set_column('B:B',25)
-    sheet_thaydoithongtin.set_column('C:F',13)
-    sheet_thaydoithongtin.set_column('G:G',24)
-    sheet_thaydoithongtin.set_column('H:I',13)
-    sheet_thaydoithongtin.set_column('J:J',24)
-    sheet_thaydoithongtin.set_column('K:L',26)
-    sheet_thaydoithongtin.set_column('M:P',8)
+    sheet_thaydoithongtin.set_column('C:G',13)
+    sheet_thaydoithongtin.set_column('H:H',24)
+    sheet_thaydoithongtin.set_column('I:J',13)
+    sheet_thaydoithongtin.set_column('K:K',24)
+    sheet_thaydoithongtin.set_column('L:M',26)
+    sheet_thaydoithongtin.set_column('N:Q',8)
     sheet_thaydoithongtin.set_row(0,30)
     sheet_thaydoithongtin.set_row(1,28)
-    sheet_thaydoithongtin.set_row(2,39)
+    sheet_thaydoithongtin.set_row(2,51)
 
     sheet_thaydoithongtin.merge_range('A1:P1','Danh sách khách hàng thay đổi thông tin',sup_title_format)
     sheet_thaydoithongtin.merge_range('A2:A3','STT',header_format)
     sheet_thaydoithongtin.merge_range('B2:B3','Tên khách hàng',header_format)
     sheet_thaydoithongtin.merge_range('C2:C3','Mã TK cũ',header_format)
-    sheet_thaydoithongtin.merge_range('D2:D3','Ngày thay đổi thông tin',header_format)
-    sheet_thaydoithongtin.merge_range('E2:J2','Thay đổi thông tin về CMND/ Hộ chiếu/ Giấy ĐKKD',header_format)
-    sheet_thaydoithongtin.merge_range('K2:L2','Thay đổi thông tin về địa chỉ',header_format)
-    sheet_thaydoithongtin.merge_range('M2:N2','Thay đổi TT về Q.tịch',header_format)
-    sheet_thaydoithongtin.merge_range('O2:P2','Thay đổi thông tin về Ghi chú',header_format)
+    sheet_thaydoithongtin.merge_range('D2:D3','Mã TK mới',header_format)
+    sheet_thaydoithongtin.merge_range('E2:E3','Ngày thay đổi thông tin',header_format)
+    sheet_thaydoithongtin.merge_range('F2:K2','Thay đổi thông tin về CMND/CCCD/Hộ chiếu/Giấy ĐKKD',header_format)
+    sheet_thaydoithongtin.merge_range('L2:M2','Thay đổi thông tin về địa chỉ',header_format)
+    sheet_thaydoithongtin.merge_range('N2:O2','Thay đổi thông tin về Quốc tịch',header_format)
+    sheet_thaydoithongtin.merge_range('P2:Q2','Thay đổi thông tin về Ghi chú',header_format)
     sub_header = [
-        'Số CMND/ Hộ chiếu/ Giấy ĐKKD cũ',
+        'Số CMND/ CCCD/ Hộ chiếu/ Giấy ĐKKD cũ',
         'Ngày cấp',
         'Nơi cấp',
         'Số CMND/ Hộ chiếu/ Giấy ĐKKD mới',
@@ -748,10 +745,10 @@ def run(
         'Ghi chú cũ',
         'Ghi chú mới',
     ]
-    sheet_thaydoithongtin.write_row('E3',sub_header,header_format)
+    sheet_thaydoithongtin.write_row('F3',sub_header,header_format)
     sheet_thaydoithongtin.write_row(
         'A4',
-        [f'({i})' for i in np.arange(16)+1],  # cong them 2 cot ghi chu
+        [f'({i})' for i in np.arange(17)+1],  # cong them 2 cot ghi chu
         header_format,
     )
     sheet_thaydoithongtin.write_column('A5', customer_information_change['no.'], text_center_format)
@@ -761,39 +758,40 @@ def run(
         text_left_format,
     )
     sheet_thaydoithongtin.write_column('C5', customer_information_change['account_code'], text_center_format)
-    sheet_thaydoithongtin.write_column('D5', customer_information_change['date_of_change'], date_format)
-    sheet_thaydoithongtin.write_column('E5', customer_information_change['old_id_number'], text_center_format)
-    sheet_thaydoithongtin.write_column('F5', customer_information_change['old_date_of_issue'], date_format)
-    sheet_thaydoithongtin.write_column('G5', customer_information_change['old_place_of_issue'], text_center_format)
-    sheet_thaydoithongtin.write_column('H5', customer_information_change['new_id_number'], text_center_format)
-    sheet_thaydoithongtin.write_column('I5', customer_information_change['new_date_of_issue'], date_format)
+    sheet_thaydoithongtin.write_column('D5', customer_information_change.shape[0]*[''], text_center_format)
+    sheet_thaydoithongtin.write_column('E5', customer_information_change['date_of_change'], date_format)
+    sheet_thaydoithongtin.write_column('F5', customer_information_change['old_id_number'], text_center_format)
+    sheet_thaydoithongtin.write_column('G5', customer_information_change['old_date_of_issue'], date_format)
+    sheet_thaydoithongtin.write_column('H5', customer_information_change['old_place_of_issue'], text_center_format)
+    sheet_thaydoithongtin.write_column('I5', customer_information_change['new_id_number'], text_center_format)
+    sheet_thaydoithongtin.write_column('J5', customer_information_change['new_date_of_issue'], date_format)
     sheet_thaydoithongtin.write_column(
-        'J5',
+        'K5',
         customer_information_change['new_place_of_issue'],
         text_center_format,
     )
     sheet_thaydoithongtin.write_column(
-        'K5',
+        'L5',
         customer_information_change['old_address'],
         text_left_format,
     )
     sheet_thaydoithongtin.write_column(
-        'L5',
+        'M5',
         customer_information_change['new_address'],
         text_left_format,
     )
     sheet_thaydoithongtin.write_column(
-        'M5',
+        'N5',
         customer_information_change['old_nationality'],
         text_center_format,
     )
     sheet_thaydoithongtin.write_column(
-        'N5',
+        'O5',
         customer_information_change['new_nationality'],
         text_center_format,
     )
-    sheet_thaydoithongtin.write_column('O5', customer_information_change['old_note'], text_left_format)
-    sheet_thaydoithongtin.write_column('P5', customer_information_change['new_note'], text_left_format)
+    sheet_thaydoithongtin.write_column('P5', customer_information_change['old_note'], text_left_format)
+    sheet_thaydoithongtin.write_column('Q5', customer_information_change['new_note'], text_left_format)
 
     ###########################################################################
     ###########################################################################
@@ -903,13 +901,15 @@ def run(
         'STT',
         'Tên khách hàng ủy quyền',
         'Mã TK',
-        'Số CMND/ Hộ chiếu/ Giấy ĐKKD người UQ',
-        'Địa chỉ  người UQ',
+        'Số CMND/ CCCD/ Hộ chiếu/ Giấy ĐKKD người UQ',
+        'Địa chỉ người UQ',
         'Ngày Uỷ quyền',
         'Tên người nhận uỷ quyền',
-        'Số CMND/ Hộ chiếu/ Giấy ĐKKD người nhận UQ',
+        'Số CMND/ CCCD/ Hộ chiếu người nhận UQ',
         'Địa chỉ người nhận UQ',
         'Phạm vi uỷ quyền',
+        'Thời hạn ủy quyền',
+        'Ghi chú'
     ]
     sheet_uyquyen.write_row('A2', headers, header_format)
     sheet_uyquyen.write_row('A3', [f'({i})' for i in np.arange(len(headers)) + 1], header_format)
@@ -933,6 +933,8 @@ def run(
         sheet_uyquyen.write(row+3,7,authorization.iloc[row,authorization.columns.get_loc('authorized_person_id')],fmt1)
         sheet_uyquyen.write(row+3,8,authorization.iloc[row,authorization.columns.get_loc('authorized_person_address')],fmt2)
         sheet_uyquyen.write(row+3,9,authorization.iloc[row,authorization.columns.get_loc('scope_of_authorization')],fmt1)
+        sheet_uyquyen.write_column(row+3,10,authorization.shape[0]*[''],fmt1)
+        sheet_uyquyen.write_column(row+3,11,authorization.shape[0]*[''],fmt2)
 
     ###########################################################################
     ###########################################################################
@@ -1008,8 +1010,8 @@ def run(
     sheet_thaydoiuyquyen.set_column('K:L',17)
     sheet_thaydoiuyquyen.set_column('M:P',12)
     sheet_thaydoiuyquyen.set_row(0,36)
-    sheet_thaydoiuyquyen.set_row(1,30)
-    sheet_thaydoiuyquyen.set_row(2,36)
+    sheet_thaydoiuyquyen.set_row(1,38)
+    sheet_thaydoiuyquyen.set_row(2,43)
 
     sheet_thaydoiuyquyen.merge_range(
         'A1:P1',
@@ -1019,18 +1021,18 @@ def run(
     sheet_thaydoiuyquyen.merge_range('A2:A3','STT',header_format)
     sheet_thaydoiuyquyen.merge_range('B2:B3','Tên khách hàng uỷ quyền',header_format)
     sheet_thaydoiuyquyen.merge_range('C2:C3','Mã TK',header_format)
-    sheet_thaydoiuyquyen.merge_range('D2:D3','Số CMND/ Hộ chiếu/ Giấy ĐKKD của khách hàng UQ',header_format)
+    sheet_thaydoiuyquyen.merge_range('D2:D3','Số CMND/ CCCD/ Hộ chiếu/ Giấy ĐKKD của khách hàng UQ',header_format)
     sheet_thaydoiuyquyen.merge_range('E2:E3','Ngày Uỷ quyền',header_format)
     sheet_thaydoiuyquyen.merge_range('F2:F3','Tên người nhận UQ',header_format)
     sheet_thaydoiuyquyen.merge_range('G2:G3','Ngày chấm dứt Uỷ quyền',header_format)
-    sheet_thaydoiuyquyen.merge_range('H2:H3','Ngày thay đổi ND uỷ quyền',header_format)
-    sheet_thaydoiuyquyen.merge_range('I2:J2','Thay đổi CMND/ Hộ chiếu người nhận UQ',header_format)
+    sheet_thaydoiuyquyen.merge_range('H2:H3','Ngày thay đổi nội dung uỷ quyền',header_format)
+    sheet_thaydoiuyquyen.merge_range('I2:J2','Thay đổi CMND/ CCCD/ Hộ chiếu người nhận UQ',header_format)
     sheet_thaydoiuyquyen.merge_range('K2:L2','Thay đổi địa chỉ người nhận UQ',header_format)
     sheet_thaydoiuyquyen.merge_range('M2:N2','Thay đổi phạm vi uỷ quyền',header_format)
     sheet_thaydoiuyquyen.merge_range('O2:P2','Thay đổi thời hạn ủy quyền',header_format)
     sub_header = [
-        'Số CMND/ Hộ chiếu cũ',
-        'Số CMND/ Hộ chiếu mới',
+        'Số CMND/ CCCD/ Hộ chiếu cũ',
+        'Số CMND/ CCCD/ Hộ chiếu mới',
         'Địa chỉ cũ',
         'Địa chỉ mới',
         'Phạm vi uỷ quyền cũ',

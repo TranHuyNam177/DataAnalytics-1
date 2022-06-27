@@ -4,9 +4,10 @@ dept_folder = r'C:\Users\namtran\Share Folder\Trading Service\Report\ThanhToanBu
 
 
 def getBranchBroker(
-        x: str,
-        d: dt.datetime
+    x:str,
+    d:dt.datetime
 ) -> pd.Series:
+
     """
     This function return branch name and broker name given an account code or sub account
 
@@ -24,9 +25,9 @@ def getBranchBroker(
         WHERE [relationship].[date] = '{d.strftime("%Y-%m-%d")}'
         """
 
-    if re.findall('[A-Z]', x):  # account code
+    if re.findall('[A-Z]',x): # account code
         sqlStatement += f" AND [relationship].[account_code] = '{x}'"
-    else:  # sub account
+    else: # sub account
         sqlStatement += f" AND [relationship].[sub_account] = '{x}'"
 
-    return pd.read_sql(sqlStatement, connect_DWH_CoSo).squeeze()
+    return pd.read_sql(sqlStatement,connect_DWH_CoSo).squeeze()

@@ -20,28 +20,27 @@ def run(  # this function can't go headless
     year = run_date[:4]
 
     url = r'https://finance.vietstock.vn/ket-qua-giao-dich?tab=thong-ke-gia&exchange=1'
-    driver = webdriver.Chrome(service=Service(PATH),options=Options())
+    driver = webdriver.Chrome(executable_path=PATH)
     wait = WebDriverWait(driver,10,ignored_exceptions=ignored_exceptions)
     driver.get(url)
     driver.maximize_window()
 
     # Đăng nhập
-    login_element = driver.find_element(By.XPATH, '/html/body/div[2]/div[6]/div/div[2]/div[2]/a[3]')
+    login_element = driver.find_element_by_xpath('/html/body/div[2]/div[6]/div/div[2]/div[2]/a[3]')
     login_element.click()
-    email_element = driver.find_element(By.XPATH, '//*[@id="txtEmailLogin"]')
+    email_element = driver.find_element_by_xpath('//*[@id="txtEmailLogin"]')
     email_element.clear()
-    email_element.send_keys('namtran@phs.vn')
-    password_element = driver.find_element(By.XPATH, '//*[@id="txtPassword"]')
+    email_element.send_keys('hiepdang@phs.vn')
+    password_element = driver.find_element_by_xpath('//*[@id="txtPassword"]')
     password_element.clear()
-    password_element.send_keys('123456789')
-    login_element = driver.find_element(By.XPATH, '//*[@id="btnLoginAccount"]')
+    password_element.send_keys('123456')
+    login_element = driver.find_element_by_xpath('//*[@id="btnLoginAccount"]')
     login_element.click()
 
     # Lấy dữ liệu 3 sàn
     for exchange in ['HOSE','HNX','UPCoM']:
         time.sleep(1)
-        select_exchange = Select(driver.find_element(
-            By.XPATH,
+        select_exchange = Select(driver.find_element_by_xpath(
             '//*[@id="trading-result"]/div/div[1]/div[1]/div/div[1]/div/div[1]/div/select'
         ))
         select_exchange.select_by_visible_text(exchange)
