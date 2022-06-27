@@ -1,14 +1,11 @@
-import pandas as pd
-
 from automation.risk_management import *
-from datawarehouse import BDATE
 
 
 def run(  # chạy hàng ngày
         run_time=dt.datetime.now()
 ):
     start = time.time()
-    info = get_info('daily', run_time)
+    info = get_info('weekly', run_time)
     period = info['period']
     t0_date = info['end_date']
     folder_name = info['folder_name']
@@ -38,12 +35,12 @@ def run(  # chạy hàng ngày
         'VIC', 'VJC', 'VNM', 'VPB', 'VRE',
     ]
     HNX30 = [
-        'BVS', 'CAP', 'CEO', 'DDG', 'DHT',
-        'DP3', 'DTD', 'HUT', 'KLF', 'L14',
-        'LAS', 'LHC', 'MBS', 'NBC', 'NDN',
-        'NRC', 'NTP', 'NVB', 'PVB', 'PVC',
-        'PVS', 'SHS', 'SLS', 'THD', 'TNG',
-        'TVC', 'VC3', 'VCS', 'VMC', 'DP3',
+        'BCC', 'BVS', 'CEO', 'DDG', 'DTD',
+        'DXP', 'HUT', 'IDC', 'L14', 'L18',
+        'LAS', 'LHC', 'MBS', 'NDN', 'NRC',
+        'NTP', 'NVB', 'PLC', 'PVC', 'PVS',
+        'SHS', 'SLS', 'TAR', 'THD', 'TIG',
+        'TNG', 'TVC', 'VC3', 'VCS', 'VNR'
     ]
     with open(join(dirname(__file__), 'sql', 'HighRisk.sql'), 'r') as file:
         SQL = file.read().replace('\n', '')

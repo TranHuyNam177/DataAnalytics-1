@@ -1,6 +1,6 @@
 from automation import *
 
-dept_folder = r'C:\Users\namtran\Share Folder\Finance\Report'
+dept_folder = r'C:\Users\namtran\Share Folder\Risk Management\Report'
 
 
 def get_info(
