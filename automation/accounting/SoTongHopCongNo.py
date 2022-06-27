@@ -5,7 +5,7 @@ def run(
     run_time=dt.datetime.now()
 ):
     start = time.time()
-    t_date = '2022.06.26'
+    t_date = '2022.01.25'
     excel_path = join(dirname(__file__), 'file', f'Sổ tổng hợp công nợ 1231_{t_date}.xlsx')
     df = pd.read_excel(
         excel_path,
