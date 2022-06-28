@@ -1,3 +1,4 @@
+import calendar
 from os.path import dirname, join
 from tqdm import tqdm
 from automation.accounting import *
@@ -5,10 +6,10 @@ from automation.accounting import *
 
 # Client code
 def run(
-        run_time=dt.datetime(2022,1,25)
+        run_time=dt.datetime(2022, 1, 25)
 ):
     report = Report(run_time)
-    for func in tqdm([report.runRDT0121], ncols=70):
+    for func in tqdm([report.runRDT0121, report.runRDT0141], ncols=70):
         func()
 
 
@@ -77,6 +78,16 @@ class Report:
             }
         )
         self.headers_format = self.workbook.add_format(
+            {
+                'border': 1,
+                'bold': True,
+                'align': 'center',
+                'valign': 'vcenter',
+                'font_size': 10,
+                'font_name': 'Arial'
+            }
+        )
+        self.headers_wrap_format = self.workbook.add_format(
             {
                 'border': 1,
                 'bold': True,
@@ -163,7 +174,8 @@ class Report:
 
     def runRDT0121(self):
         TaiKhoan_338804 = pd.read_excel(
-            join(self.bravoFolder, f'{self.bravoDateString}', f'Sổ tổng hợp công nợ 338804_{self.bravoDateString}.xlsx'),
+            join(self.bravoFolder, f'{self.bravoDateString}',
+                 f'Sổ tổng hợp công nợ 338804_{self.bravoDateString}.xlsx'),
             skiprows=8,
             skipfooter=1,
             names=['SoTaiKhoan', 'TenKhachHang', 'DuNoDau338804', 'DuCoDau338804',
@@ -186,8 +198,8 @@ class Report:
                         [r].[cash_balance_at_phs] [TienTaiPHS],
                         [r].[cash_balance_at_vsd] [TienTaiVSD]
                     FROM [rdt0121] [r]
-                    LEFT JOIN [relationship] ON [relationship].[account_code] = [r].[account_code] 
-                    AND [relationship].[date] = [r].[date]
+                    LEFT JOIN [relationship] 
+                    ON [relationship].[account_code] = [r].[account_code] AND [relationship].[date] = [r].[date]
                     LEFT JOIN [account] ON [account].[account_code] = [r].[account_code]
                     WHERE [r].[date] = '{self.bravoDateString}'
                     """,
@@ -197,7 +209,7 @@ class Report:
         table = RDT0121.merge(
             TaiKhoan_3243[['SoTaiKhoan', 'DuCoCuoi3243']], how='outer', on='SoTaiKhoan'
         ).merge(
-            TaiKhoan_338804[['SoTaiKhoan', 'DuCoCuoi338804']], how = 'outer', on = 'SoTaiKhoan'
+            TaiKhoan_338804[['SoTaiKhoan', 'DuCoCuoi338804']], how='outer', on='SoTaiKhoan'
         )
         table = table.fillna(0)
 
@@ -255,8 +267,173 @@ class Report:
 
         sum_start_row = table.shape[0] + 5
         worksheet.merge_range(f'A{sum_start_row}:B{sum_start_row}', 'Tổng cộng:', self.sum_format)
+        worksheet.write_row(f'C{sum_start_row}', [''] * 2, self.sum_format)
         for col in 'EFGHIJ':
             if col == 'EF':
-                worksheet.write(f'{col}{sum_start_row}',f'=SUM({col}5:{col}{sum_start_row - 1})',self.money_sum_fds_format)
+                worksheet.write(f'{col}{sum_start_row}', f'=SUM({col}5:{col}{sum_start_row - 1})',
+                                self.money_sum_fds_format)
             else:
-                worksheet.write(f'{col}{sum_start_row}',f'=SUM({col}5:{col}{sum_start_row - 1})',self.money_sum_bravo_diff_format)
+                worksheet.write(f'{col}{sum_start_row}', f'=SUM({col}5:{col}{sum_start_row - 1})',
+                                self.money_sum_bravo_diff_format)
+
+    def runRDT0141(self):
+        TaiKhoan_13504 = pd.read_excel(
+            join(self.bravoFolder, f'{self.bravoDateString}', f'Sổ tổng hợp công nợ 13504_{self.bravoDateString}.xlsx'),
+            skiprows=8,
+            skipfooter=1,
+            names=['SoTaiKhoan', 'TenKhachHang', 'DuNoDau13504', 'DuCoDau13504',
+                   'PhatSinhNo13504', 'PhatSinhCo13504', 'DuNoCuoi13504', 'DuCoCuoi13504']
+        )
+        TaiKhoan_13505 = pd.read_excel(
+            join(self.bravoFolder, f'{self.bravoDateString}', f'Sổ tổng hợp công nợ 13505_{self.bravoDateString}.xlsx'),
+            skiprows=8,
+            skipfooter=1,
+            names=['SoTaiKhoan', 'TenKhachHang', 'DuNoDau13505', 'DuCoDau13505',
+                   'PhatSinhNo13505', 'PhatSinhCo13505', 'DuNoCuoi13505', 'DuCoCuoi13505']
+        )
+
+        RDT0141 = pd.read_sql(
+            f"""
+            SELECT
+                [account].[account_code] [SoTaiKhoan],
+                [r].[sub_account] [SoTieuKhoan],
+                [account].[customer_name] [TenKhachHang],
+                [relationship].[branch_id] [MaChiNhanh],
+                [r].[deferred_payment_amount_opening] [KhoanChamTraDauKy],
+                [r].[deferred_payment_fee_opening] [PhiChamTraDauKy],
+                ([r].[deferred_payment_amount_opening]+[r].[deferred_payment_fee_opening]) [TongTienChamDauKy],
+                [r].[deferred_payment_amount_increase] [KhoanChamTraPSTangTrongKy],
+                [r].[deferred_payment_fee_increase] [PhiChamTraPSTangTrongKy],
+                [r].[deferred_payment_amount_decrease] [KhoanChamTraPSGiamTrongKy],
+                [r].[deferred_payment_fee_decrease] [PhiChamTraPSGiamTrongKy],
+                [r].[deferred_payment_amount_closing] [KhoanChamTraCuoiKy],
+                [r].[deferred_payment_fee_closing] [PhiChamTraCuoiKy],
+                ([r].[deferred_payment_amount_closing] + [r].[deferred_payment_fee_closing]) [TongTienChamCuoiKy]
+            FROM [rdt0141] [r]
+            LEFT JOIN [relationship] 
+            ON [relationship].[sub_account] = [r].[sub_account] AND [relationship].[date] = [r].[date]
+            LEFT JOIN [account] ON [account].[account_code] = [relationship].[account_code]
+            WHERE [r].[date] = '{self.bravoDateString}'
+            """,
+            connect_DWH_PhaiSinh
+        )
+
+        table = RDT0141.merge(
+            TaiKhoan_13504[['SoTaiKhoan', 'DuNoCuoi13504', 'PhatSinhNo13504', 'PhatSinhCo13504']], how='outer',
+            on='SoTaiKhoan'
+        ).merge(
+            TaiKhoan_13505[['SoTaiKhoan', 'DuNoCuoi13505', 'PhatSinhNo13505', 'PhatSinhCo13505']], how='outer',
+            on='SoTaiKhoan'
+        )
+        table = table.fillna(0)
+
+        table['KhoanChamTraCuoiKyDiff'] = table['KhoanChamTraCuoiKy'] - table['DuNoCuoi13504']
+        table['PhiChamTraCuoiKyDiff'] = table['PhiChamTraCuoiKy'] - table['DuNoCuoi13505']
+        table['KhoanChamTraPSTangTrongKyDiff'] = table['KhoanChamTraPSTangTrongKy'] - table['PhatSinhNo13504']
+        table['PhiChamTraPSTangTrongKyDiff'] = table['PhiChamTraPSTangTrongKy'] - table['PhatSinhNo13505']
+        table['KhoanChamTraPSGiamTrongKyDiff'] = table['KhoanChamTraPSGiamTrongKy'] - table['PhatSinhCo13504']
+        table['PhiChamTraPSGiamTrongKyDiff'] = table['PhiChamTraPSGiamTrongKy'] - table['PhatSinhCo13505']
+
+        ###################################################
+        ###################################################
+        ###################################################
+
+        worksheet = self.workbook.add_worksheet('RDT0141')
+        worksheet.set_column('A:B', 17)
+        worksheet.set_column('C:C', 43)
+        worksheet.set_column('D:Z', 17)
+
+        worksheet.write('A1', 'BÁO CÁO SỐ DƯ KHOẢN CHẬM TRẢ', self.info_format)
+        worksheet.write('A2', f'Từ ngày {self.file_date} đến ngày {self.file_date}', self.info_format)
+        worksheet.merge_range('A3:N3', 'FDS', self.FDS_title_format)
+        worksheet.merge_range('O3:T3', 'Bravo', self.bravo_title_format)
+        worksheet.merge_range('U3:Z3', 'Chênh lệch', self.diff_title_format)
+        worksheet.merge_range('E4:G5', 'Đầu kỳ', self.headers_format)
+        worksheet.merge_range('H4:K4', 'Trong kỳ', self.headers_format)
+        worksheet.merge_range('L4:N5', 'Cuối kỳ', self.headers_format)
+        worksheet.merge_range('O4:P4', 'Cuối kỳ', self.headers_format)
+        worksheet.merge_range('Q4:T4', 'Trong kỳ', self.headers_format)
+        worksheet.merge_range('U4:V4', 'Cuối kỳ', self.headers_format)
+        worksheet.merge_range('W4:Z4', 'Trong kỳ', self.headers_format)
+        worksheet.merge_range('H5:I5', 'Phát sinh tăng', self.headers_format)
+        worksheet.merge_range('J5:K5', 'Phát sinh giảm', self.headers_format)
+        worksheet.merge_range('Q5:R5', 'PS tăng', self.headers_format)
+        worksheet.merge_range('S5:T5', 'PS giảm', self.headers_format)
+        worksheet.merge_range('W5:X5', 'PS tăng', self.headers_format)
+        worksheet.merge_range('Y5:Z5', 'PS giảm', self.headers_format)
+
+        worksheet.write_row('A4', ['']*4, self.headers_format)
+        worksheet.write_row('A5', ['']*4, self.headers_format)
+        worksheet.write_row('O5', ['']*2, self.headers_format)
+        worksheet.write_row('U5', ['']*2, self.headers_format)
+        worksheet.write_row(
+            'A6',
+            [
+                'Tài khoản ký quỹ',
+                'Tài khoản giao dịch',
+                'Tên Khách Hàng',
+                'Chi nhánh',
+                'Khoản chậm trả',
+                'Phí chậm trả',
+                'Tổng số tiền chậm trả',
+                'Khoản chậm trả',
+                'Phí chậm trả',
+                'Khoản chậm trả',
+                'Phí chậm trả',
+                'Khoản chậm trả',
+                'Phí chậm trả',
+                'Tổng số tiền chậm trả',
+                'Khoản chậm trả',
+                'Phí Khoản chậm trả',
+                'Khoản chậm trả',
+                'Phí chậm trả',
+                'Khoản chậm trả',
+                'Phí chậm trả',
+                'Khoản chậm trả',
+                'Phí Khoản chậm trả',
+                'Khoản chậm trả',
+                'Phí chậm trả',
+                'Khoản chậm trả',
+                'Phí chậm trả'
+            ],
+            self.headers_wrap_format
+        )
+
+        worksheet.write_column('A7', table['SoTaiKhoan'], self.text_left_format)
+        worksheet.write_column('B7', table['SoTieuKhoan'], self.text_left_format)
+        worksheet.write_column('C7', table['TenKhachHang'], self.text_left_format)
+        worksheet.write_column('D7', table['MaChiNhanh'], self.text_left_format)
+        worksheet.write_column('E7', table['KhoanChamTraDauKy'], self.money_fds_format)
+        worksheet.write_column('F7', table['PhiChamTraDauKy'], self.money_fds_format)
+        worksheet.write_column('G7', table['TongTienChamDauKy'], self.money_fds_format)
+        worksheet.write_column('H7', table['KhoanChamTraPSTangTrongKy'], self.money_fds_format)
+        worksheet.write_column('I7', table['PhiChamTraPSTangTrongKy'], self.money_fds_format)
+        worksheet.write_column('J7', table['KhoanChamTraPSGiamTrongKy'], self.money_fds_format)
+        worksheet.write_column('K7', table['PhiChamTraPSGiamTrongKy'], self.money_fds_format)
+        worksheet.write_column('L7', table['KhoanChamTraCuoiKy'], self.money_fds_format)
+        worksheet.write_column('M7', table['PhiChamTraCuoiKy'], self.money_fds_format)
+        worksheet.write_column('N7', table['TongTienChamCuoiKy'], self.money_fds_format)
+        worksheet.write_column('O7', table['DuNoCuoi13504'], self.money_bravo_diff_format)
+        worksheet.write_column('P7', table['DuNoCuoi13505'], self.money_bravo_diff_format)
+        worksheet.write_column('Q7', table['PhatSinhNo13504'], self.money_bravo_diff_format)
+        worksheet.write_column('R7', table['PhatSinhNo13505'], self.money_bravo_diff_format)
+        worksheet.write_column('S7', table['PhatSinhCo13504'], self.money_bravo_diff_format)
+        worksheet.write_column('T7', table['PhatSinhCo13505'], self.money_bravo_diff_format)
+        worksheet.write_column('U7', table['KhoanChamTraCuoiKyDiff'], self.money_bravo_diff_format)
+        worksheet.write_column('V7', table['PhiChamTraCuoiKyDiff'], self.money_bravo_diff_format)
+        worksheet.write_column('W7', table['KhoanChamTraPSTangTrongKyDiff'], self.money_bravo_diff_format)
+        worksheet.write_column('X7', table['PhiChamTraPSTangTrongKyDiff'], self.money_bravo_diff_format)
+        worksheet.write_column('Y7', table['KhoanChamTraPSGiamTrongKyDiff'], self.money_bravo_diff_format)
+        worksheet.write_column('Z7', table['PhiChamTraPSGiamTrongKyDiff'], self.money_bravo_diff_format)
+
+        sum_start_row = table.shape[0] + 7
+        worksheet.merge_range(f'A{sum_start_row}:B{sum_start_row}', 'Tổng cộng:', self.sum_format)
+        worksheet.write_row(f'B{sum_start_row}', [''] * 3, self.sum_format)
+
+        for col in 'EFGHIJKLMNOPQRSTUVWXYZ':
+            if col == 'EFGHIJKLMN':
+                worksheet.write(f'{col}{sum_start_row}', f'=SUM({col}5:{col}{sum_start_row - 1})',
+                                self.money_sum_fds_format)
+            else:
+                worksheet.write(f'{col}{sum_start_row}', f'=SUM({col}5:{col}{sum_start_row - 1})',
+                                self.money_sum_bravo_diff_format)
