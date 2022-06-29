@@ -190,13 +190,13 @@ def run_ps_4():
     RDO0002 = pd.read_sql(
         f"""
         SELECT
-            MAX([relationship].[account_code]) [SoTaiKhoan],
+            [relationship].[account_code] [SoTaiKhoan],
             SUM([r].[fee]) [PhiGD_FDS]
         FROM [rdo0002] [r]
         LEFT JOIN [relationship] 
         ON [relationship].[sub_account] = [r].[sub_account] AND [relationship].[date] = [r].[date]
         WHERE [r].[date] BETWEEN '{sod}' AND '{eod}'
-        GROUP BY [r].[sub_account]
+        GROUP BY [relationship].[account_code]
         ORDER BY [SoTaiKhoan]
         """,
         connect_DWH_PhaiSinh

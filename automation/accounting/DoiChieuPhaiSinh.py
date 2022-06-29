@@ -14,7 +14,6 @@ def run(
 
 
 class Report:
-
     def __init__(self, run_time: dt.datetime):
         info = get_info('daily', run_time)
         period = info['period']
@@ -449,9 +448,77 @@ class Report:
                 worksheet.write(f'{col}{sum_start_row}', f'=SUM({col}5:{col}{sum_start_row - 1})',
                                 self.money_sum_bravo_diff_format)
 
+    def runRDT0127(self):
+        TaiKhoan_33353 = pd.read_excel(
+            join(self.bravoFolder, f'{self.bravoDateString}', f'BẢNG KÊ CTU TK 5115104 THANG {self.bravoDateString[5:7]}.{self.bravoDateString[0:4]}.xlsx'),
+            skiprows=8,
+            skipfooter=1,
+            usecols=('Tiền', 'Mã đối tượng\n(chi tiết)')
+        ).rename(columns={'Tiền': 'ThueTNCN_Bravo', 'Mã đối tượng\n(chi tiết)': 'SoTaiKhoan'})
+        TaiKhoan_33353_groupby = TaiKhoan_33353.groupby('SoTaiKhoan').sum()
+
+        RDT0127 = pd.read_sql(
+            f"""
+            SELECT
+                MAX([relationship].[account_code]) [SoTaiKhoan],
+                SUM([r].[fee]) [ThueTNCN_FDS]
+            FROM [rdt0127] [r]
+            LEFT JOIN [relationship] 
+            ON [relationship].[sub_account] = [r].[sub_account] AND [relationship].[date] = [r].[date]
+            WHERE [r].[date] BETWEEN '{self.firstDateString}' AND '{self.lastDateString}'
+            GROUP BY [r].[sub_account]
+            """,
+            connect_DWH_PhaiSinh
+        )
+
+        table = RDT0127.merge(TaiKhoan_33353_groupby, how='outer', on='SoTaiKhoan')
+        table = table.fillna(0)
+
+        table['ThueTNCN_Diff'] = table['ThueTNCN_FDS'] - table['ThueTNCN_Bravo']
+        table = table.sort_values('SoTaiKhoan')
+
+        ###################################################
+        ###################################################
+        ###################################################
+
+        worksheet = self.workbook.add_worksheet('RDT0127')
+        worksheet.set_column('A:B', 16)
+        worksheet.set_column('C:D', 18)
+
+        worksheet.write('A1', 'BÁO CÁO ĐỐI CHIẾU THUẾ TNCN', self.info_format)
+        worksheet.write('A2', f'Từ ngày/from : {self.file_firstDate} Đến ngày/to : {self.file_lastDate}', self.info_format)
+        worksheet.merge_range('A3:B3', 'FDS', self.FDS_title_format)
+        worksheet.write('C3', 'Bravo', self.bravo_title_format)
+        worksheet.write('D3', 'Chênh lệch', self.diff_title_format)
+
+        worksheet.write_row(
+            'A4',
+            [
+                'Số tài khoản',
+                'Thuế TNCN',
+                'Thuế TNCN',
+                ''
+            ],
+            self.headers_format
+        )
+        worksheet.write_column('A5', table['SoTaiKhoan'], self.text_left_format)
+        worksheet.write_column('B5', table['ThueTNCN_FDS'], self.money_bravo_diff_format)
+        worksheet.write_column('C5', table['ThueTNCN_Bravo'], self.money_bravo_diff_format)
+        worksheet.write_column('D5', table['ThueTNCN_Diff'], self.money_bravo_diff_format)
+
+        sum_start_row = table.shape[0] + 5
+        worksheet.write(f'A{sum_start_row}', 'Grand Total', self.sum_format)
+        for col in 'BCD':
+            worksheet.write(
+                f'{col}{sum_start_row}',
+                f'=SUM({col}5:{col}{sum_start_row-1})',
+                self.money_sum_bravo_diff_format
+            )
+
     def runRDO0002(self):
         TaiKhoan_5115104 = pd.read_excel(
-            join(self.bravoFolder, f'{self.bravoDateString}', f'BẢNG KÊ CTU TK 5115104 THANG {self.bravoDateString[5:7]}.{self.bravoDateString[0:4]}.xlsx'),
+            join(self.bravoFolder, f'{self.bravoDateString}',
+                 f'BẢNG KÊ CTU TK 5115104 THANG {self.bravoDateString[5:7]}.{self.bravoDateString[0:4]}.xlsx'),
             skiprows=8,
             skipfooter=1,
             usecols=('Tiền', 'Mã đối tượng\n(chi tiết)')
@@ -461,13 +528,14 @@ class Report:
         RDO0002 = pd.read_sql(
             f"""
             SELECT
-                MAX([relationship].[account_code]) [SoTaiKhoan],
+                [relationship].[account_code] [SoTaiKhoan],
                 SUM([r].[fee]) [PhiGD_FDS]
             FROM [rdo0002] [r]
             LEFT JOIN [relationship] 
             ON [relationship].[sub_account] = [r].[sub_account] AND [relationship].[date] = [r].[date]
             WHERE [r].[date] BETWEEN '{self.firstDateString}' AND '{self.lastDateString}'
-            GROUP BY [r].[sub_account]
+            GROUP BY [relationship].[account_code]
+            ORDER BY [SoTaiKhoan]
             """,
             connect_DWH_PhaiSinh
         )
@@ -476,7 +544,6 @@ class Report:
         table = table.fillna(0)
 
         table['PhiGD_Diff'] = table['PhiGD_FDS'] - table['PhiGD_Bravo']
-        table = table.sort_values('SoTaiKhoan')
 
         ###################################################
         ###################################################
@@ -487,7 +554,7 @@ class Report:
         worksheet.set_column('C:D', 18)
 
         worksheet.write('A1', 'SAO KÊ LỆNH KHỚP', self.info_format)
-        worksheet.write('A2', f'Từ ngày/from : {self.file_firstDate} Đến ngày/to : {self.file_lastDate}', self.info_format)
+        worksheet.write('A2',f'Từ ngày/from : {self.file_firstDate} Đến ngày/to : {self.file_lastDate}',self.info_format)
         worksheet.merge_range('A3:B3', 'FDS', self.FDS_title_format)
         worksheet.write('C3', 'Bravo', self.bravo_title_format)
         worksheet.write('D3', 'Chênh lệch', self.diff_title_format)
@@ -510,4 +577,7 @@ class Report:
         sum_start_row = table.shape[0] + 5
         worksheet.write(f'A{sum_start_row}', 'Grand Total', self.sum_format)
         for col in 'BCD':
-            worksheet.write(f'{col}{sum_start_row}', f'=SUM({col}5:{col}{sum_start_row - 1})', self.money_sum_bravo_diff_format)
+            worksheet.write(
+                f'{col}{sum_start_row}',
+                f'=SUM({col}5:{col}{sum_start_row-1})',
+                self.money_sum_bravo_diff_format)
