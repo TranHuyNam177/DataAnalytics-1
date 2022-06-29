@@ -5,52 +5,51 @@ def run():
     start = time.time()
     t_date = '2022.01.25'
 
+    bravoFolder = join(dirname(dept_folder), 'FileFromBravo')
     # query data RLN0006 (Margin outstanding)
     query_rln06 = pd.read_sql(
         f"""
             SELECT
-                [r].[account_code] [SoTaiKhoan],
-                SUM([r].[principal_outstanding]) [principal_outstanding],
-                SUM([r].[interest_outstanding]) [interest_outstanding]
-            FROM [margin_outstanding] [r]
-            WHERE [r].[date] = '{t_date}'
-            AND  [r].[type] <> N'Ứng trước cổ tức'
-            GROUP BY [r].[account_code]
+                [margin_outstanding].[account_code] [SoTaiKhoan],
+                MAX([account].[customer_name]) [TenKhachHangFlex],
+                SUM([margin_outstanding].[interest_outstanding]) [DuCuoiNoFlex]
+            FROM [margin_outstanding]
+            LEFT JOIN [account] ON [account].[account_code] = [margin_outstanding].[account_code]
+            WHERE [margin_outstanding].[date] = '{t_date}'
+                AND  [margin_outstanding].[type] <> N'Ứng trước cổ tức'
+            GROUP BY [margin_outstanding].[account_code]
             """,
         connect_DWH_CoSo
     )
 
-    col_name = ['SoTaiKhoan', 'TenKhachHang', 'DuNoDauBravo', 'DuCoDauBravo',
-                'PhatSinhNoBravo', 'PhatSinhCoBravo', 'DuNoCuoiBravo', 'DuCoCuoiBravo']
+    col_name = ['SoTaiKhoan', 'TenKhachHangBravo', 'DuDauNoBravo', 'DuDauCoBravo', 'PhatSinhNoBravo',
+                'PhatSinhCoBravo', 'DuCuoiNoBravo', 'DuCuoiCoBravo']
 
     # process data by pandas - sheet 1231
     df_1231 = pd.read_excel(
-        join(dirname(__file__), 'file', f'Sổ tổng hợp công nợ 1231_{t_date}.xlsx'),
+        join(bravoFolder, f'{t_date}', f'Sổ tổng hợp công nợ 1231_{t_date}.xlsx'),
         skiprows=8,
         skipfooter=1,
         names=col_name
     )
 
-    table_1231 = df_1231.merge(query_rln06[['SoTaiKhoan', 'principal_outstanding']], on='SoTaiKhoan', how='outer')
-
-    table_1231['TenKhachHang'] = table_1231['TenKhachHang'].fillna('')
-    table_1231.iloc[2:] = table_1231.iloc[2:].fillna(0)
-
-    table_1231 = table_1231.sort_values('SoTaiKhoan', ignore_index=True)
-    table_1231['CL'] = table_1231['DuNoCuoiBravo'] - table_1231['principal_outstanding']
+    table_1231 = pd.merge(df_1231, query_rln06, how='outer', on='SoTaiKhoan')
+    table_1231['TenKhachHang'] = table_1231['TenKhachHangBravo'].fillna(table_1231['TenKhachHangFlex'])
+    table_1231 = table_1231.fillna(0)
+    table_1231['DuCuoiNoDiff'] = table_1231['DuCuoiNoBravo'] - table_1231['DuCuoiNoFlex']
 
     # process data by pandas - sheet 13226
     df_13226 = pd.read_excel(
-        join(dirname(__file__), 'file', f'Sổ tổng hợp công nợ 13226_{t_date}.xlsx'),
+        join(bravoFolder, f'{t_date}', f'Sổ tổng hợp công nợ 13226_{t_date}.xlsx'),
         skiprows=8,
         skipfooter=1,
         names=col_name
     )
 
-    table_13226 = df_13226.merge(query_rln06[['SoTaiKhoan', 'interest_outstanding']], on='SoTaiKhoan', how='outer')
+    table_13226 = pd.merge(df_13226, query_rln06, how='outer', on='SoTaiKhoan')
 
-    table_13226['TenKhachHang'] = table_13226['TenKhachHang'].fillna('')
-    table_13226.iloc[2:] = table_13226.iloc[2:].fillna(0)
+    table_13226['TenKhachHang'] = table_13226['TenKhachHangBravo'].fillna(table_13226['TenKhachHangFlex'])
+    table_13226 = table_13226.fillna(0)
 
     table_13226 = table_13226.sort_values('SoTaiKhoan', ignore_index=True)
     table_13226['CL'] = table_13226['DuNoCuoiBravo'] - table_13226['interest_outstanding']
@@ -65,15 +64,15 @@ def run_ps():
         join(bravoFolder, f'{t_date}', f'Sổ tổng hợp công nợ 3243_{t_date}.xlsx'),
         skiprows=8,
         skipfooter=1,
-        usecols=('1', '8')
-    ).rename(columns={'1': 'SoTaiKhoan', '8': 'DuCoCuoi3243'})
+        usecols=('1', '2', '8')
+    ).rename(columns={'1': 'SoTaiKhoan', '2': 'TenKhachHang3243', '8': 'DuCoCuoi3243'})
 
     TaiKhoan_338804 = pd.read_excel(
         join(bravoFolder, f'{t_date}', f'Sổ tổng hợp công nợ 338804_{t_date}.xlsx'),
         skiprows=8,
         skipfooter=1,
-        usecols=('1', '8')
-    ).rename(columns={'1': 'SoTaiKhoan', '8': 'DuCoCuoi338804'})
+        usecols=('1', '2', '8')
+    ).rename(columns={'1': 'SoTaiKhoan', '2': 'TenKhachHang338804', '8': 'DuCoCuoi338804'})
 
     RDT0121 = pd.read_sql(
         f"""
@@ -97,6 +96,8 @@ def run_ps():
     ).merge(
         TaiKhoan_338804, how='outer', on='SoTaiKhoan'
     )
+    table['TenKhachHang'] = table['TenKhachHang3243'].fillna(table['TenKhachHang338804']).fillna(table['TenKhachHangFlex']).fillna('')
+    table['MaChiNhanh'] = table['MaChiNhanh'].fillna('')
     table = table.fillna(0)
 
     table['TienTaiPHSDiff'] = table['TienTaiPHS'] - table['DuCoCuoi3243']
@@ -112,23 +113,23 @@ def run_ps_2():
         join(bravoFolder, f'{end_date}', f'Sổ tổng hợp công nợ 13504_{end_date}.xlsx'),
         skiprows=8,
         skipfooter=1,
-        names=['SoTaiKhoan', 'TenKhachHang', 'DuNoDau13504', 'DuCoDau13504',
-               'PhatSinhNo13504', 'PhatSinhCo13504', 'DuNoCuoi13504', 'DuCoCuoi13504']
-    )
+        usecols=('1', '2', '5', '6', '7')
+    ).rename(columns={'1': 'SoTaiKhoan', '2': 'TenKhachHang13504', '5': 'PhatSinhNo13504', '6': 'PhatSinhCo13504',
+                      '7': 'DuNoCuoi13504'})
     TaiKhoan_13505 = pd.read_excel(
         join(bravoFolder, f'{end_date}', f'Sổ tổng hợp công nợ 13505_{end_date}.xlsx'),
         skiprows=8,
         skipfooter=1,
-        names=['SoTaiKhoan', 'TenKhachHang', 'DuNoDau13505', 'DuCoDau13505',
-               'PhatSinhNo13505', 'PhatSinhCo13505', 'DuNoCuoi13505', 'DuCoCuoi13505']
-    )
+        usecols=('1', '2', '5', '6', '7')
+    ).rename(columns={'1': 'SoTaiKhoan', '2': 'TenKhachHang13505', '5': 'PhatSinhNo13505', '6': 'PhatSinhCo13505',
+                      '7': 'DuNoCuoi13505'})
 
     RDT0141 = pd.read_sql(
         f"""
         SELECT
             [account].[account_code] [SoTaiKhoan],
             [r].[sub_account] [SoTieuKhoan],
-            [account].[customer_name] [TenKhachHang],
+            [account].[customer_name] [TenKhachHangFlex],
             [relationship].[branch_id] [MaChiNhanh],
             [r].[deferred_payment_amount_opening] [KhoanChamTraDauKy],
             [r].[deferred_payment_fee_opening] [PhiChamTraDauKy],
@@ -144,17 +145,20 @@ def run_ps_2():
         LEFT JOIN [relationship] 
         ON [relationship].[sub_account] = [r].[sub_account] AND [relationship].[date] = [r].[date]
         LEFT JOIN [account] ON [account].[account_code] = [relationship].[account_code]
-        WHERE [r].[date] = '{end_date}'
+        WHERE [r].[date] = '{end_date}' AND [account].[account_code] = '022C105886'
         ORDER BY [SoTaiKhoan]
         """,
         connect_DWH_PhaiSinh
     )
 
     table = RDT0141.merge(
-        TaiKhoan_13504[['SoTaiKhoan','DuNoCuoi13504','PhatSinhNo13504','PhatSinhCo13504']],how='outer',on='SoTaiKhoan'
+        TaiKhoan_13504, how='outer', on='SoTaiKhoan'
     ).merge(
-        TaiKhoan_13505[['SoTaiKhoan','DuNoCuoi13505','PhatSinhNo13505','PhatSinhCo13505']],how='outer',on='SoTaiKhoan'
+        TaiKhoan_13505, how='outer', on='SoTaiKhoan'
     )
+    table['TenKhachHang'] = table['TenKhachHang13504'].fillna(table['TenKhachHang13505']).fillna(table['TenKhachHangFlex']).fillna('')
+    table['SoTieuKhoan'] = table['SoTieuKhoan'].fillna('')
+    table['MaChiNhanh'] = table['MaChiNhanh'].fillna('')
     table = table.fillna(0)
 
     table['KhoanChamTraCuoiKyDiff'] = table['KhoanChamTraCuoiKy'] - table['DuNoCuoi13504']
@@ -164,3 +168,41 @@ def run_ps_2():
     table['KhoanChamTraPSGiamTrongKyDiff'] = table['KhoanChamTraPSGiamTrongKy'] - table['PhatSinhCo13504']
     table['PhiChamTraPSGiamTrongKyDiff'] = table['PhiChamTraPSGiamTrongKy'] - table['PhatSinhCo13505']
 
+
+def run_ps_4():
+    run_time = dt.datetime(2022, 1, 25)
+    t_date = run_time.strftime('%Y.%m.%d')
+    sod = dt.datetime(run_time.year, run_time.month, 1).strftime('%Y.%m.%d')
+    eod = dt.datetime(
+        run_time.year, run_time.month, calendar.monthrange(run_time.year, run_time.month)[1]
+    ).strftime('%Y.%m.%d')
+
+    bravoFolder = join(dirname(dept_folder), 'FileFromBravo')
+
+    TaiKhoan_5115104 = pd.read_excel(
+        join(bravoFolder, f'{t_date}', f'BẢNG KÊ CTU TK 5115104 THANG {t_date[5:7]}.{t_date[0:4]}.xlsx'),
+        skiprows=8,
+        skipfooter=1,
+        usecols=('Tiền', 'Mã đối tượng\n(chi tiết)')
+    ).rename(columns={'Tiền': 'PhíGD_Bravo', 'Mã đối tượng\n(chi tiết)': 'SoTaiKhoan'})
+    TaiKhoan_5115104_groupby = TaiKhoan_5115104.groupby('SoTaiKhoan').sum()
+
+    RDO0002 = pd.read_sql(
+        f"""
+        SELECT
+            MAX([relationship].[account_code]) [SoTaiKhoan],
+            SUM([r].[fee]) [PhiGD_FDS]
+        FROM [rdo0002] [r]
+        LEFT JOIN [relationship] 
+        ON [relationship].[sub_account] = [r].[sub_account] AND [relationship].[date] = [r].[date]
+        WHERE [r].[date] BETWEEN '{sod}' AND '{eod}'
+        GROUP BY [r].[sub_account]
+        ORDER BY [SoTaiKhoan]
+        """,
+        connect_DWH_PhaiSinh
+    )
+
+    table = RDO0002.merge(TaiKhoan_5115104_groupby, how='outer', on='SoTaiKhoan')
+    table = table.fillna(0)
+
+    table['PhiGD_Diff'] = table['PhiGD_FDS'] - table['PhíGD_Bravo']

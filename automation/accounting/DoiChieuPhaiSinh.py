@@ -9,7 +9,7 @@ def run(
         run_time=dt.datetime(2022, 1, 25)
 ):
     report = Report(run_time)
-    for func in tqdm([report.runRDT0121, report.runRDT0141], ncols=70):
+    for func in tqdm([report.runRDT0121, report.runRDT0141, report.runRDO0002], ncols=70):
         func()
 
 
@@ -27,7 +27,17 @@ class Report:
 
         self.bravoFolder = join(dirname(dept_folder), 'FileFromBravo')
         self.bravoDateString = run_time.strftime('%Y.%m.%d')
+        # first date and last date of month
+        self.firstDateString = dt.datetime(run_time.year, run_time.month, 1).strftime('%Y.%m.%d')
+        self.lastDateString = dt.datetime(
+            run_time.year, run_time.month, calendar.monthrange(run_time.year, run_time.month)[1]
+        ).strftime('%Y.%m.%d')
+
         self.file_date = dt.datetime.strptime(t0_date, '%Y-%m-%d').strftime('%d.%m.%Y')
+        # first date and last date of month for file date
+        self.file_firstDate = dt.datetime.strptime(self.firstDateString, '%Y.%m.%d').strftime('%d.%m.%Y')
+        self.file_lastDate = dt.datetime.strptime(self.lastDateString, '%Y.%m.%d').strftime('%d.%m.%Y')
+
         self.file_name = f'Đối Chiếu Phái Sinh {self.file_date}.xlsx'
         self.writer = pd.ExcelWriter(
             join(dept_folder, folder_name, period, self.file_name),
@@ -177,16 +187,16 @@ class Report:
             join(self.bravoFolder, f'{self.bravoDateString}', f'Sổ tổng hợp công nợ 3243_{self.bravoDateString}.xlsx'),
             skiprows=8,
             skipfooter=1,
-            usecols=('1', '8')
-        ).rename(columns={'1': 'SoTaiKhoan', '8': 'DuCoCuoi3243'})
+            usecols=('1', '2', '8')
+        ).rename(columns={'1': 'SoTaiKhoan', '2': 'TenKhachHang3243', '8': 'DuCoCuoi3243'})
 
         TaiKhoan_338804 = pd.read_excel(
             join(self.bravoFolder, f'{self.bravoDateString}',
                  f'Sổ tổng hợp công nợ 338804_{self.bravoDateString}.xlsx'),
             skiprows=8,
             skipfooter=1,
-            usecols=('1', '8')
-        ).rename(columns={'1': 'SoTaiKhoan', '8': 'DuCoCuoi338804'})
+            usecols=('1', '2', '8')
+        ).rename(columns={'1': 'SoTaiKhoan', '2': 'TenKhachHang338804', '8': 'DuCoCuoi338804'})
 
         RDT0121 = pd.read_sql(
             f"""
@@ -210,6 +220,8 @@ class Report:
         ).merge(
             TaiKhoan_338804, how='outer', on='SoTaiKhoan'
         )
+        table['TenKhachHang'] = table['TenKhachHang3243'].fillna(table['TenKhachHang338804']).fillna(table['TenKhachHangFlex']).fillna('')
+        table['MaChiNhanh'] = table['MaChiNhanh'].fillna('')
         table = table.fillna(0)
 
         table['TienTaiPHSDiff'] = table['TienTaiPHS'] - table['DuCoCuoi3243']
@@ -256,7 +268,7 @@ class Report:
         worksheet.write_column('A5', np.arange(table.shape[0]) + 1, self.stt_format)
         worksheet.write_column('B5', table['MaChiNhanh'], self.text_left_format)
         worksheet.write_column('C5', table['SoTaiKhoan'], self.text_left_format)
-        worksheet.write_column('D5', table['TenKhachHangFlex'], self.text_left_format)
+        worksheet.write_column('D5', table['TenKhachHang'], self.text_left_format)
         worksheet.write_column('E5', table['TienTaiPHS'], self.money_fds_format)
         worksheet.write_column('F5', table['TienTaiVSD'], self.money_fds_format)
         worksheet.write_column('G5', table['DuCoCuoi3243'], self.money_bravo_diff_format)
@@ -280,22 +292,22 @@ class Report:
             join(self.bravoFolder, f'{self.bravoDateString}', f'Sổ tổng hợp công nợ 13504_{self.bravoDateString}.xlsx'),
             skiprows=8,
             skipfooter=1,
-            usecols=('1', '5', '6', '7')
-        ).rename(columns={'1': 'SoTaiKhoan', '5': 'PhatSinhNo13504', '6': 'PhatSinhCo13504', '7': 'DuNoCuoi13504'})
+            usecols=('1', '2', '5', '6', '7')
+        ).rename(columns={'1': 'SoTaiKhoan', '2': 'TenKhachHang13504','5': 'PhatSinhNo13504', '6': 'PhatSinhCo13504', '7': 'DuNoCuoi13504'})
 
         TaiKhoan_13505 = pd.read_excel(
             join(self.bravoFolder, f'{self.bravoDateString}', f'Sổ tổng hợp công nợ 13505_{self.bravoDateString}.xlsx'),
             skiprows=8,
             skipfooter=1,
-            usecols=('1', '5', '6', '7')
-        ).rename(columns={'1': 'SoTaiKhoan', '5': 'PhatSinhNo13505', '6': 'PhatSinhCo13505', '7': 'DuNoCuoi13505'})
+            usecols=('1', '2', '5', '6', '7')
+        ).rename(columns={'1': 'SoTaiKhoan', '2': 'TenKhachHang13505', '5': 'PhatSinhNo13505', '6': 'PhatSinhCo13505', '7': 'DuNoCuoi13505'})
 
         RDT0141 = pd.read_sql(
             f"""
             SELECT
                 [account].[account_code] [SoTaiKhoan],
                 [r].[sub_account] [SoTieuKhoan],
-                [account].[customer_name] [TenKhachHang],
+                [account].[customer_name] [TenKhachHangFlex],
                 [relationship].[branch_id] [MaChiNhanh],
                 [r].[deferred_payment_amount_opening] [KhoanChamTraDauKy],
                 [r].[deferred_payment_fee_opening] [PhiChamTraDauKy],
@@ -321,6 +333,9 @@ class Report:
         ).merge(
             TaiKhoan_13505, how='outer', on='SoTaiKhoan'
         )
+        table['TenKhachHang'] = table['TenKhachHang13504'].fillna(table['TenKhachHang13505']).fillna(table['TenKhachHangFlex']).fillna('')
+        table['SoTieuKhoan'] = table['SoTieuKhoan'].fillna('')
+        table['MaChiNhanh'] = table['MaChiNhanh'].fillna('')
         table = table.fillna(0)
 
         table['KhoanChamTraCuoiKyDiff'] = table['KhoanChamTraCuoiKy'] - table['DuNoCuoi13504']
@@ -433,3 +448,66 @@ class Report:
             else:
                 worksheet.write(f'{col}{sum_start_row}', f'=SUM({col}5:{col}{sum_start_row - 1})',
                                 self.money_sum_bravo_diff_format)
+
+    def runRDO0002(self):
+        TaiKhoan_5115104 = pd.read_excel(
+            join(self.bravoFolder, f'{self.bravoDateString}', f'BẢNG KÊ CTU TK 5115104 THANG {self.bravoDateString[5:7]}.{self.bravoDateString[0:4]}.xlsx'),
+            skiprows=8,
+            skipfooter=1,
+            usecols=('Tiền', 'Mã đối tượng\n(chi tiết)')
+        ).rename(columns={'Tiền': 'PhiGD_Bravo', 'Mã đối tượng\n(chi tiết)': 'SoTaiKhoan'})
+        TaiKhoan_5115104_groupby = TaiKhoan_5115104.groupby('SoTaiKhoan').sum()
+
+        RDO0002 = pd.read_sql(
+            f"""
+            SELECT
+                MAX([relationship].[account_code]) [SoTaiKhoan],
+                SUM([r].[fee]) [PhiGD_FDS]
+            FROM [rdo0002] [r]
+            LEFT JOIN [relationship] 
+            ON [relationship].[sub_account] = [r].[sub_account] AND [relationship].[date] = [r].[date]
+            WHERE [r].[date] BETWEEN '{self.firstDateString}' AND '{self.lastDateString}'
+            GROUP BY [r].[sub_account]
+            """,
+            connect_DWH_PhaiSinh
+        )
+
+        table = RDO0002.merge(TaiKhoan_5115104_groupby, how='outer', on='SoTaiKhoan')
+        table = table.fillna(0)
+
+        table['PhiGD_Diff'] = table['PhiGD_FDS'] - table['PhiGD_Bravo']
+        table = table.sort_values('SoTaiKhoan')
+
+        ###################################################
+        ###################################################
+        ###################################################
+
+        worksheet = self.workbook.add_worksheet('RDO0002')
+        worksheet.set_column('A:B', 16)
+        worksheet.set_column('C:D', 18)
+
+        worksheet.write('A1', 'SAO KÊ LỆNH KHỚP', self.info_format)
+        worksheet.write('A2', f'Từ ngày/from : {self.file_firstDate} Đến ngày/to : {self.file_lastDate}', self.info_format)
+        worksheet.merge_range('A3:B3', 'FDS', self.FDS_title_format)
+        worksheet.write('C3', 'Bravo', self.bravo_title_format)
+        worksheet.write('D3', 'Chênh lệch', self.diff_title_format)
+
+        worksheet.write_row(
+            'A4',
+            [
+                'Tài khoản ký quỹ',
+                'Phí GD',
+                'Phí GD',
+                ''
+            ],
+            self.headers_format
+        )
+        worksheet.write_column('A5', table['SoTaiKhoan'], self.text_left_format)
+        worksheet.write_column('B5', table['PhiGD_FDS'], self.money_bravo_diff_format)
+        worksheet.write_column('C5', table['PhiGD_Bravo'], self.money_bravo_diff_format)
+        worksheet.write_column('D5', table['PhiGD_Diff'], self.money_bravo_diff_format)
+
+        sum_start_row = table.shape[0] + 5
+        worksheet.write(f'A{sum_start_row}', 'Grand Total', self.sum_format)
+        for col in 'BCD':
+            worksheet.write(f'{col}{sum_start_row}', f'=SUM({col}5:{col}{sum_start_row - 1})', self.money_sum_bravo_diff_format)
