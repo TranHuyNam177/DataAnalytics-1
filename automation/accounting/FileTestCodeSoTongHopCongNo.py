@@ -61,20 +61,19 @@ def run_ps():
     t_date = '2022.01.25'
     bravoFolder = join(dirname(dept_folder), 'FileFromBravo')
 
-    TaiKhoan_338804 = pd.read_excel(
-        join(bravoFolder, f'{t_date}', f'Sổ tổng hợp công nợ 338804_{t_date}.xlsx'),
-        skiprows=8,
-        skipfooter=1,
-        names=['SoTaiKhoan', 'TenKhachHang', 'DuNoDau338804', 'DuCoDau338804',
-               'PhatSinhNo338804', 'PhatSinhCo338804', 'DuNoCuoi338804', 'DuCoCuoi338804']
-    )
     TaiKhoan_3243 = pd.read_excel(
         join(bravoFolder, f'{t_date}', f'Sổ tổng hợp công nợ 3243_{t_date}.xlsx'),
         skiprows=8,
         skipfooter=1,
-        names=['SoTaiKhoan', 'TenKhachHang', 'DuNoDau3243', 'DuCoDau3243',
-               'PhatSinhNo3243', 'PhatSinhCo3243', 'DuNoCuoi3243', 'DuCoCuoi3243']
-    )
+        usecols=('1', '8')
+    ).rename(columns={'1': 'SoTaiKhoan', '8': 'DuCoCuoi3243'})
+
+    TaiKhoan_338804 = pd.read_excel(
+        join(bravoFolder, f'{t_date}', f'Sổ tổng hợp công nợ 338804_{t_date}.xlsx'),
+        skiprows=8,
+        skipfooter=1,
+        usecols=('1', '8')
+    ).rename(columns={'1': 'SoTaiKhoan', '8': 'DuCoCuoi338804'})
 
     RDT0121 = pd.read_sql(
         f"""
@@ -94,9 +93,9 @@ def run_ps():
     )
 
     table = RDT0121.merge(
-        TaiKhoan_3243[['SoTaiKhoan', 'DuCoCuoi3243']], how='outer', on='SoTaiKhoan'
+        TaiKhoan_3243, how='outer', on='SoTaiKhoan'
     ).merge(
-        TaiKhoan_338804[['SoTaiKhoan', 'DuCoCuoi338804']], how = 'outer', on = 'SoTaiKhoan'
+        TaiKhoan_338804, how='outer', on='SoTaiKhoan'
     )
     table = table.fillna(0)
 

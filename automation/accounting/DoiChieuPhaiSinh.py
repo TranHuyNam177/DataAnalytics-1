@@ -173,21 +173,20 @@ class Report:
         self.writer.close()
 
     def runRDT0121(self):
+        TaiKhoan_3243 = pd.read_excel(
+            join(self.bravoFolder, f'{self.bravoDateString}', f'Sổ tổng hợp công nợ 3243_{self.bravoDateString}.xlsx'),
+            skiprows=8,
+            skipfooter=1,
+            usecols=('1', '8')
+        ).rename(columns={'1': 'SoTaiKhoan', '8': 'DuCoCuoi3243'})
+
         TaiKhoan_338804 = pd.read_excel(
             join(self.bravoFolder, f'{self.bravoDateString}',
                  f'Sổ tổng hợp công nợ 338804_{self.bravoDateString}.xlsx'),
             skiprows=8,
             skipfooter=1,
-            names=['SoTaiKhoan', 'TenKhachHang', 'DuNoDau338804', 'DuCoDau338804',
-                   'PhatSinhNo338804', 'PhatSinhCo338804', 'DuNoCuoi338804', 'DuCoCuoi338804']
-        )
-        TaiKhoan_3243 = pd.read_excel(
-            join(self.bravoFolder, f'{self.bravoDateString}', f'Sổ tổng hợp công nợ 3243_{self.bravoDateString}.xlsx'),
-            skiprows=8,
-            skipfooter=1,
-            names=['SoTaiKhoan', 'TenKhachHang', 'DuNoDau3243', 'DuCoDau3243',
-                   'PhatSinhNo3243', 'PhatSinhCo3243', 'DuNoCuoi3243', 'DuCoCuoi3243']
-        )
+            usecols=('1', '8')
+        ).rename(columns={'1': 'SoTaiKhoan', '8': 'DuCoCuoi338804'})
 
         RDT0121 = pd.read_sql(
             f"""
@@ -207,9 +206,9 @@ class Report:
         )
 
         table = RDT0121.merge(
-            TaiKhoan_3243[['SoTaiKhoan', 'DuCoCuoi3243']], how='outer', on='SoTaiKhoan'
+            TaiKhoan_3243, how='outer', on='SoTaiKhoan'
         ).merge(
-            TaiKhoan_338804[['SoTaiKhoan', 'DuCoCuoi338804']], how='outer', on='SoTaiKhoan'
+            TaiKhoan_338804, how='outer', on='SoTaiKhoan'
         )
         table = table.fillna(0)
 
@@ -281,16 +280,15 @@ class Report:
             join(self.bravoFolder, f'{self.bravoDateString}', f'Sổ tổng hợp công nợ 13504_{self.bravoDateString}.xlsx'),
             skiprows=8,
             skipfooter=1,
-            names=['SoTaiKhoan', 'TenKhachHang', 'DuNoDau13504', 'DuCoDau13504',
-                   'PhatSinhNo13504', 'PhatSinhCo13504', 'DuNoCuoi13504', 'DuCoCuoi13504']
-        )
+            usecols=('1', '5', '6', '7')
+        ).rename(columns={'1': 'SoTaiKhoan', '5': 'PhatSinhNo13504', '6': 'PhatSinhCo13504', '7': 'DuNoCuoi13504'})
+
         TaiKhoan_13505 = pd.read_excel(
             join(self.bravoFolder, f'{self.bravoDateString}', f'Sổ tổng hợp công nợ 13505_{self.bravoDateString}.xlsx'),
             skiprows=8,
             skipfooter=1,
-            names=['SoTaiKhoan', 'TenKhachHang', 'DuNoDau13505', 'DuCoDau13505',
-                   'PhatSinhNo13505', 'PhatSinhCo13505', 'DuNoCuoi13505', 'DuCoCuoi13505']
-        )
+            usecols=('1', '5', '6', '7')
+        ).rename(columns={'1': 'SoTaiKhoan', '5': 'PhatSinhNo13505', '6': 'PhatSinhCo13505', '7': 'DuNoCuoi13505'})
 
         RDT0141 = pd.read_sql(
             f"""
@@ -319,11 +317,9 @@ class Report:
         )
 
         table = RDT0141.merge(
-            TaiKhoan_13504[['SoTaiKhoan', 'DuNoCuoi13504', 'PhatSinhNo13504', 'PhatSinhCo13504']], how='outer',
-            on='SoTaiKhoan'
+            TaiKhoan_13504, how='outer', on='SoTaiKhoan'
         ).merge(
-            TaiKhoan_13505[['SoTaiKhoan', 'DuNoCuoi13505', 'PhatSinhNo13505', 'PhatSinhCo13505']], how='outer',
-            on='SoTaiKhoan'
+            TaiKhoan_13505, how='outer', on='SoTaiKhoan'
         )
         table = table.fillna(0)
 
