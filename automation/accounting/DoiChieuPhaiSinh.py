@@ -9,7 +9,7 @@ def run(
         run_time=dt.datetime(2022, 1, 25)
 ):
     report = Report(run_time)
-    for func in tqdm([report.runRDT0121, report.runRDT0141, report.runRDO0002], ncols=70):
+    for func in tqdm([report.runRDT0121, report.runRDT0141, report.runRDT0127, report.runRDO0002], ncols=70):
         func()
 
 
@@ -33,9 +33,11 @@ class Report:
         ).strftime('%Y.%m.%d')
 
         self.file_date = dt.datetime.strptime(t0_date, '%Y-%m-%d').strftime('%d.%m.%Y')
+        # date in sub title in Excel
+        self.sub_title_date = dt.datetime.strptime(t0_date, '%Y-%m-%d').strftime('%d/%m/%Y')
         # first date and last date of month for file date
-        self.file_firstDate = dt.datetime.strptime(self.firstDateString, '%Y.%m.%d').strftime('%d.%m.%Y')
-        self.file_lastDate = dt.datetime.strptime(self.lastDateString, '%Y.%m.%d').strftime('%d.%m.%Y')
+        self.file_firstDate = dt.datetime.strptime(self.firstDateString, '%Y.%m.%d').strftime('%d/%m/%Y')
+        self.file_lastDate = dt.datetime.strptime(self.lastDateString, '%Y.%m.%d').strftime('%d/%m/%Y')
 
         self.file_name = f'Đối Chiếu Phái Sinh {self.file_date}.xlsx'
         self.writer = pd.ExcelWriter(
@@ -199,18 +201,18 @@ class Report:
 
         RDT0121 = pd.read_sql(
             f"""
-                    SELECT
-                        [relationship].[branch_id] [MaChiNhanh],
-                        [r].[account_code] [SoTaiKhoan],
-                        [account].[customer_name] [TenKhachHangFlex],
-                        [r].[cash_balance_at_phs] [TienTaiPHS],
-                        [r].[cash_balance_at_vsd] [TienTaiVSD]
-                    FROM [rdt0121] [r]
-                    LEFT JOIN [relationship] 
-                    ON [relationship].[account_code] = [r].[account_code] AND [relationship].[date] = [r].[date]
-                    LEFT JOIN [account] ON [account].[account_code] = [r].[account_code]
-                    WHERE [r].[date] = '{self.bravoDateString}'
-                    """,
+            SELECT
+                [relationship].[branch_id] [MaChiNhanh],
+                [r].[account_code] [SoTaiKhoan],
+                [account].[customer_name] [TenKhachHangFlex],
+                [r].[cash_balance_at_phs] [TienTaiPHS],
+                [r].[cash_balance_at_vsd] [TienTaiVSD]
+            FROM [rdt0121] [r]
+            LEFT JOIN [relationship] 
+            ON [relationship].[account_code] = [r].[account_code] AND [relationship].[date] = [r].[date]
+            LEFT JOIN [account] ON [account].[account_code] = [r].[account_code]
+            WHERE [r].[date] = '{self.bravoDateString}'
+            """,
             connect_DWH_PhaiSinh
         )
 
@@ -243,7 +245,7 @@ class Report:
         worksheet.set_column('J:J', 20)
 
         worksheet.write('A1', 'BÁO CÁO SỐ DƯ TIỀN NHÀ ĐẦU TƯ', self.info_format)
-        worksheet.write('A2', f'Từ ngày {self.file_date} đến ngày {self.file_date}', self.info_format)
+        worksheet.write('A2', f'Từ ngày {self.sub_title_date} đến ngày {self.sub_title_date}', self.info_format)
         worksheet.merge_range('A3:F3', 'FDS', self.FDS_title_format)
         worksheet.merge_range('G3:H3', 'Bravo', self.bravo_title_format)
         worksheet.merge_range('I3:J3', 'Chênh lệch', self.diff_title_format)
@@ -354,7 +356,7 @@ class Report:
         worksheet.set_column('D:Z', 17)
 
         worksheet.write('A1', 'BÁO CÁO SỐ DƯ KHOẢN CHẬM TRẢ', self.info_format)
-        worksheet.write('A2', f'Từ ngày {self.file_date} đến ngày {self.file_date}', self.info_format)
+        worksheet.write('A2', f'Từ ngày {self.sub_title_date} đến ngày {self.sub_title_date}', self.info_format)
         worksheet.merge_range('A3:N3', 'FDS', self.FDS_title_format)
         worksheet.merge_range('O3:T3', 'Bravo', self.bravo_title_format)
         worksheet.merge_range('U3:Z3', 'Chênh lệch', self.diff_title_format)
@@ -450,23 +452,24 @@ class Report:
 
     def runRDT0127(self):
         TaiKhoan_33353 = pd.read_excel(
-            join(self.bravoFolder, f'{self.bravoDateString}', f'BẢNG KÊ CTU TK 5115104 THANG {self.bravoDateString[5:7]}.{self.bravoDateString[0:4]}.xlsx'),
-            skiprows=8,
+            join(self.bravoFolder, f'{self.bravoDateString}', f'BẢNG KÊ CTU TK 33353 THANG {self.bravoDateString[5:7]}.{self.bravoDateString[0:4]}.xlsx'),
+            skiprows=7,
             skipfooter=1,
             usecols=('Tiền', 'Mã đối tượng\n(chi tiết)')
         ).rename(columns={'Tiền': 'ThueTNCN_Bravo', 'Mã đối tượng\n(chi tiết)': 'SoTaiKhoan'})
+        # Trong file mẫu phần PIVOT từ FDS ko thấy lấy tài khoản GO0065 (CỤC THUẾ TPHCM)
+        TaiKhoan_33353 = TaiKhoan_33353.loc[TaiKhoan_33353['SoTaiKhoan'] != 'GO0065']
         TaiKhoan_33353_groupby = TaiKhoan_33353.groupby('SoTaiKhoan').sum()
 
         RDT0127 = pd.read_sql(
             f"""
             SELECT
-                MAX([relationship].[account_code]) [SoTaiKhoan],
-                SUM([r].[fee]) [ThueTNCN_FDS]
-            FROM [rdt0127] [r]
-            LEFT JOIN [relationship] 
-            ON [relationship].[sub_account] = [r].[sub_account] AND [relationship].[date] = [r].[date]
-            WHERE [r].[date] BETWEEN '{self.firstDateString}' AND '{self.lastDateString}'
-            GROUP BY [r].[sub_account]
+                [r].[SoTaiKhoan],
+                SUM([r].[ThueTNCN]) [ThueTNCN_FDS]
+            FROM [RDT0127] [r]
+            WHERE [r].[Ngay] BETWEEN '{self.firstDateString}' AND '{self.lastDateString}'
+            GROUP BY [r].[SoTaiKhoan]
+            ORDER BY [r].[SoTaiKhoan]
             """,
             connect_DWH_PhaiSinh
         )
@@ -475,7 +478,6 @@ class Report:
         table = table.fillna(0)
 
         table['ThueTNCN_Diff'] = table['ThueTNCN_FDS'] - table['ThueTNCN_Bravo']
-        table = table.sort_values('SoTaiKhoan')
 
         ###################################################
         ###################################################

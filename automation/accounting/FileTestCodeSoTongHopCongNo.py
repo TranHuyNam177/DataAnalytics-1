@@ -55,7 +55,7 @@ def run():
     table_13226['CL'] = table_13226['DuNoCuoiBravo'] - table_13226['interest_outstanding']
 
 
-def run_ps():
+def run_ps_1():
     start = time.time()
     t_date = '2022.01.25'
     bravoFolder = join(dirname(dept_folder), 'FileFromBravo')
@@ -169,6 +169,44 @@ def run_ps_2():
     table['PhiChamTraPSGiamTrongKyDiff'] = table['PhiChamTraPSGiamTrongKy'] - table['PhatSinhCo13505']
 
 
+def run_ps_3():
+    run_time = dt.datetime(2022, 1, 25)
+    t_date = run_time.strftime('%Y.%m.%d')
+    sod = dt.datetime(run_time.year, run_time.month, 1).strftime('%Y.%m.%d')
+    eod = dt.datetime(
+        run_time.year, run_time.month, calendar.monthrange(run_time.year, run_time.month)[1]
+    ).strftime('%Y.%m.%d')
+
+    bravoFolder = join(dirname(dept_folder), 'FileFromBravo')
+
+    TaiKhoan_33353 = pd.read_excel(
+        join(bravoFolder, f'{t_date}', f'BẢNG KÊ CTU TK 33353 THANG {t_date[5:7]}.{t_date[0:4]}.xlsx'),
+        skiprows=7,
+        skipfooter=1,
+        usecols=('Tiền', 'Mã đối tượng\n(chi tiết)')
+    ).rename(columns={'Tiền': 'ThueTNCN_Bravo', 'Mã đối tượng\n(chi tiết)': 'SoTaiKhoan'})
+    TaiKhoan_33353 = TaiKhoan_33353.loc[TaiKhoan_33353['SoTaiKhoan'] != 'GO0065']
+    TaiKhoan_33353_groupby = TaiKhoan_33353.groupby('SoTaiKhoan').sum()
+
+    RDT0127 = pd.read_sql(
+        f"""
+        SELECT
+            [r].[SoTaiKhoan],
+            SUM([r].[ThueTNCN]) [ThueTNCN_FDS]
+        FROM [RDT0127] [r]
+        WHERE [r].[Ngay] BETWEEN '{sod}' AND '{eod}'
+        GROUP BY [r].[SoTaiKhoan]
+        ORDER BY [r].[SoTaiKhoan]
+        """,
+        connect_DWH_PhaiSinh
+    )
+
+    table = RDT0127.merge(TaiKhoan_33353_groupby, how='outer', on='SoTaiKhoan')
+    table = table.fillna(0)
+
+    table['ThueTNCN_Diff'] = table['ThueTNCN_FDS'] - table['ThueTNCN_Bravo']
+
+
 def run_ps_4():
     run_time = dt.datetime(2022, 1, 25)
     t_date = run_time.strftime('%Y.%m.%d')
@@ -184,7 +222,7 @@ def run_ps_4():
         skiprows=8,
         skipfooter=1,
         usecols=('Tiền', 'Mã đối tượng\n(chi tiết)')
-    ).rename(columns={'Tiền': 'PhíGD_Bravo', 'Mã đối tượng\n(chi tiết)': 'SoTaiKhoan'})
+    ).rename(columns={'Tiền': 'PhiGD_Bravo', 'Mã đối tượng\n(chi tiết)': 'SoTaiKhoan'})
     TaiKhoan_5115104_groupby = TaiKhoan_5115104.groupby('SoTaiKhoan').sum()
 
     RDO0002 = pd.read_sql(
@@ -205,4 +243,16 @@ def run_ps_4():
     table = RDO0002.merge(TaiKhoan_5115104_groupby, how='outer', on='SoTaiKhoan')
     table = table.fillna(0)
 
-    table['PhiGD_Diff'] = table['PhiGD_FDS'] - table['PhíGD_Bravo']
+    table['PhiGD_Diff'] = table['PhiGD_FDS'] - table['PhiGD_Bravo']
+
+
+def run_PLK():
+    # df['CL'] = np.where(df['DuNoCuoi']>0, df['DuNoCuoi'] - df['Flex'], df['DuCoCuoi'] - df['Flex'])
+    run_time = dt.datetime(2022, 1, 25)
+    t_date = run_time.strftime('%Y.%m.%d')
+    sod = dt.datetime(run_time.year, run_time.month, 1).strftime('%Y.%m.%d')
+    eod = dt.datetime(
+        run_time.year, run_time.month, calendar.monthrange(run_time.year, run_time.month)[1]
+    ).strftime('%Y.%m.%d')
+
+    bravoFolder = join(dirname(dept_folder), 'FileFromBravo')
