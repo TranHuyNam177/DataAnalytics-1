@@ -26,18 +26,10 @@ class Report:
 
         self.bravoFolder = join(dirname(dept_folder), 'FileFromBravo')
         self.bravoDateString = run_time.strftime('%Y.%m.%d')
-        # first date and last date of month
-        self.firstDateString = dt.datetime(run_time.year, run_time.month, 1).strftime('%Y.%m.%d')
-        self.lastDateString = dt.datetime(
-            run_time.year, run_time.month, calendar.monthrange(run_time.year, run_time.month)[1]
-        ).strftime('%Y.%m.%d')
 
         self.file_date = dt.datetime.strptime(t0_date, '%Y-%m-%d').strftime('%d.%m.%Y')
         # date in sub title in Excel
         self.sub_title_date = dt.datetime.strptime(t0_date, '%Y-%m-%d').strftime('%d/%m/%Y')
-        # first date and last date of month for file date
-        self.file_firstDate = dt.datetime.strptime(self.firstDateString, '%Y.%m.%d').strftime('%d/%m/%Y')
-        self.file_lastDate = dt.datetime.strptime(self.lastDateString, '%Y.%m.%d').strftime('%d/%m/%Y')
 
         self.file_name = f'Đối Chiếu Phái Sinh {self.file_date}.xlsx'
         self.writer = pd.ExcelWriter(
@@ -459,7 +451,6 @@ class Report:
         ).rename(columns={'Tiền': 'ThueTNCN_Bravo', 'Mã đối tượng\n(chi tiết)': 'SoTaiKhoan'})
         # Trong file mẫu phần PIVOT từ FDS ko thấy lấy tài khoản GO0065 (CỤC THUẾ TPHCM)
         TaiKhoan_33353 = TaiKhoan_33353.loc[TaiKhoan_33353['SoTaiKhoan'] != 'GO0065']
-        TaiKhoan_33353_groupby = TaiKhoan_33353.groupby('SoTaiKhoan').sum()
 
         RDT0127 = pd.read_sql(
             f"""
@@ -467,14 +458,14 @@ class Report:
                 [r].[SoTaiKhoan],
                 SUM([r].[ThueTNCN]) [ThueTNCN_FDS]
             FROM [RDT0127] [r]
-            WHERE [r].[Ngay] BETWEEN '{self.firstDateString}' AND '{self.lastDateString}'
+            WHERE [r].[Ngay] = '{self.bravoDateString}'
             GROUP BY [r].[SoTaiKhoan]
             ORDER BY [r].[SoTaiKhoan]
             """,
             connect_DWH_PhaiSinh
         )
 
-        table = RDT0127.merge(TaiKhoan_33353_groupby, how='outer', on='SoTaiKhoan')
+        table = RDT0127.merge(TaiKhoan_33353, how='outer', on='SoTaiKhoan')
         table = table.fillna(0)
 
         table['ThueTNCN_Diff'] = table['ThueTNCN_FDS'] - table['ThueTNCN_Bravo']
@@ -488,7 +479,7 @@ class Report:
         worksheet.set_column('C:D', 18)
 
         worksheet.write('A1', 'BÁO CÁO ĐỐI CHIẾU THUẾ TNCN', self.info_format)
-        worksheet.write('A2', f'Từ ngày/from : {self.file_firstDate} Đến ngày/to : {self.file_lastDate}', self.info_format)
+        worksheet.write('A2', f'Từ ngày/from : {self.sub_title_date} Đến ngày/to : {self.sub_title_date}', self.info_format)
         worksheet.merge_range('A3:B3', 'FDS', self.FDS_title_format)
         worksheet.write('C3', 'Bravo', self.bravo_title_format)
         worksheet.write('D3', 'Chênh lệch', self.diff_title_format)
@@ -525,7 +516,6 @@ class Report:
             skipfooter=1,
             usecols=('Tiền', 'Mã đối tượng\n(chi tiết)')
         ).rename(columns={'Tiền': 'PhiGD_Bravo', 'Mã đối tượng\n(chi tiết)': 'SoTaiKhoan'})
-        TaiKhoan_5115104_groupby = TaiKhoan_5115104.groupby('SoTaiKhoan').sum()
 
         RDO0002 = pd.read_sql(
             f"""
@@ -535,14 +525,14 @@ class Report:
             FROM [rdo0002] [r]
             LEFT JOIN [relationship] 
             ON [relationship].[sub_account] = [r].[sub_account] AND [relationship].[date] = [r].[date]
-            WHERE [r].[date] BETWEEN '{self.firstDateString}' AND '{self.lastDateString}'
+            WHERE [r].[date] = '{self.bravoDateString}'
             GROUP BY [relationship].[account_code]
             ORDER BY [SoTaiKhoan]
             """,
             connect_DWH_PhaiSinh
         )
 
-        table = RDO0002.merge(TaiKhoan_5115104_groupby, how='outer', on='SoTaiKhoan')
+        table = RDO0002.merge(TaiKhoan_5115104, how='outer', on='SoTaiKhoan')
         table = table.fillna(0)
 
         table['PhiGD_Diff'] = table['PhiGD_FDS'] - table['PhiGD_Bravo']
@@ -556,7 +546,7 @@ class Report:
         worksheet.set_column('C:D', 18)
 
         worksheet.write('A1', 'SAO KÊ LỆNH KHỚP', self.info_format)
-        worksheet.write('A2',f'Từ ngày/from : {self.file_firstDate} Đến ngày/to : {self.file_lastDate}',self.info_format)
+        worksheet.write('A2',f'Từ ngày/from : {self.sub_title_date} Đến ngày/to : {self.sub_title_date}',self.info_format)
         worksheet.merge_range('A3:B3', 'FDS', self.FDS_title_format)
         worksheet.write('C3', 'Bravo', self.bravo_title_format)
         worksheet.write('D3', 'Chênh lệch', self.diff_title_format)

@@ -145,7 +145,7 @@ def run_ps_2():
         LEFT JOIN [relationship] 
         ON [relationship].[sub_account] = [r].[sub_account] AND [relationship].[date] = [r].[date]
         LEFT JOIN [account] ON [account].[account_code] = [relationship].[account_code]
-        WHERE [r].[date] = '{end_date}' AND [account].[account_code] = '022C105886'
+        WHERE [r].[date] = '{end_date}'
         ORDER BY [SoTaiKhoan]
         """,
         connect_DWH_PhaiSinh
@@ -186,7 +186,6 @@ def run_ps_3():
         usecols=('Tiền', 'Mã đối tượng\n(chi tiết)')
     ).rename(columns={'Tiền': 'ThueTNCN_Bravo', 'Mã đối tượng\n(chi tiết)': 'SoTaiKhoan'})
     TaiKhoan_33353 = TaiKhoan_33353.loc[TaiKhoan_33353['SoTaiKhoan'] != 'GO0065']
-    TaiKhoan_33353_groupby = TaiKhoan_33353.groupby('SoTaiKhoan').sum()
 
     RDT0127 = pd.read_sql(
         f"""
@@ -194,14 +193,14 @@ def run_ps_3():
             [r].[SoTaiKhoan],
             SUM([r].[ThueTNCN]) [ThueTNCN_FDS]
         FROM [RDT0127] [r]
-        WHERE [r].[Ngay] BETWEEN '{sod}' AND '{eod}'
+        WHERE [r].[Ngay] = '{t_date}'
         GROUP BY [r].[SoTaiKhoan]
         ORDER BY [r].[SoTaiKhoan]
         """,
         connect_DWH_PhaiSinh
     )
 
-    table = RDT0127.merge(TaiKhoan_33353_groupby, how='outer', on='SoTaiKhoan')
+    table = RDT0127.merge(TaiKhoan_33353, how='outer', on='SoTaiKhoan')
     table = table.fillna(0)
 
     table['ThueTNCN_Diff'] = table['ThueTNCN_FDS'] - table['ThueTNCN_Bravo']
@@ -223,7 +222,6 @@ def run_ps_4():
         skipfooter=1,
         usecols=('Tiền', 'Mã đối tượng\n(chi tiết)')
     ).rename(columns={'Tiền': 'PhiGD_Bravo', 'Mã đối tượng\n(chi tiết)': 'SoTaiKhoan'})
-    TaiKhoan_5115104_groupby = TaiKhoan_5115104.groupby('SoTaiKhoan').sum()
 
     RDO0002 = pd.read_sql(
         f"""
@@ -233,14 +231,14 @@ def run_ps_4():
         FROM [rdo0002] [r]
         LEFT JOIN [relationship] 
         ON [relationship].[sub_account] = [r].[sub_account] AND [relationship].[date] = [r].[date]
-        WHERE [r].[date] BETWEEN '{sod}' AND '{eod}'
+        WHERE [r].[date] = '{t_date}'
         GROUP BY [relationship].[account_code]
         ORDER BY [SoTaiKhoan]
         """,
         connect_DWH_PhaiSinh
     )
 
-    table = RDO0002.merge(TaiKhoan_5115104_groupby, how='outer', on='SoTaiKhoan')
+    table = RDO0002.merge(TaiKhoan_5115104, how='outer', on='SoTaiKhoan')
     table = table.fillna(0)
 
     table['PhiGD_Diff'] = table['PhiGD_FDS'] - table['PhiGD_Bravo']
