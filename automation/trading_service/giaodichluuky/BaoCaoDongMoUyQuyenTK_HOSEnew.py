@@ -359,9 +359,8 @@ def run(
             'border':1,
             'align':'center',
             'valign':'vcenter',
-            'text_wrap':True,
             'font_name':'Times New Roman',
-            'font_size':12
+            'font_size':12,
         }
     )
     stt_column_format = workbook.add_format(
@@ -435,9 +434,9 @@ def run(
     sheet_tonghop.merge_range('B10:B11','KHÁCH HÀNG',header_format)
     sheet_tonghop.merge_range('C10:F10','SỐ LƯỢNG TÀI KHOẢN',header_format)
     sheet_tonghop.write_row('C11',['Đầu kỳ','Mở trong tháng','Đóng trong tháng','Cuối kỳ'],header_format)
-    sheet_tonghop.write_column('A12',['','1','2','','1','2',''],stt_column_format)
-    sheet_tonghop.write('A12','I',stt_heading_format)
-    sheet_tonghop.write('A15','II',stt_heading_format)
+    sheet_tonghop.write_column('A12',['']*7,stt_column_format)
+    sheet_tonghop.write('A12',1,stt_heading_format)
+    sheet_tonghop.write('A15',2,stt_heading_format)
     sheet_tonghop.write('B12','TRONG NƯỚC',header_cell_format)
     sheet_tonghop.write('B15','NƯỚC NGOÀI',header_cell_format)
     sheet_tonghop.write_column('B13',['     Cá nhân','     Tổ chức'],normal_cell_format)
