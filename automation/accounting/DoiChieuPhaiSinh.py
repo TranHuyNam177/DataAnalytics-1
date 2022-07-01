@@ -104,7 +104,7 @@ class Report:
         self.stt_format = self.workbook.add_format(
             {
                 'border': 1,
-                'align': 'righ',
+                'align': 'right',
                 'valign': 'vcenter',
                 'font_size': 10,
                 'font_name': 'Arial',
