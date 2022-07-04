@@ -521,7 +521,7 @@ def run(
     sheet_motaikhoan.set_column('H:J',12)
     sheet_motaikhoan.set_column('K:K',10)
     sheet_motaikhoan.set_row(0,36)
-    sheet_motaikhoan.merge_range('A1:M1','Danh sách khách hàng mở tài khoản',sup_title_format)
+    sheet_motaikhoan.merge_range('A1:K1','Danh sách khách hàng mở tài khoản',sup_title_format)
     headers = [
         'STT',
         'Tên khách hàng',
@@ -720,7 +720,7 @@ def run(
     sheet_thaydoithongtin.set_row(1,28)
     sheet_thaydoithongtin.set_row(2,51)
 
-    sheet_thaydoithongtin.merge_range('A1:P1','Danh sách khách hàng thay đổi thông tin',sup_title_format)
+    sheet_thaydoithongtin.merge_range('A1:Q1','Danh sách khách hàng thay đổi thông tin',sup_title_format)
     sheet_thaydoithongtin.merge_range('A2:A3','STT',header_format)
     sheet_thaydoithongtin.merge_range('B2:B3','Tên khách hàng',header_format)
     sheet_thaydoithongtin.merge_range('C2:C3','Mã TK cũ',header_format)
@@ -895,7 +895,7 @@ def run(
     sheet_uyquyen.set_column('K:K',6)
     sheet_uyquyen.set_row(0,36)
 
-    sheet_uyquyen.merge_range('A1:J1','Danh sách khách hàng ủy quyền',sup_title_format)
+    sheet_uyquyen.merge_range('A1:L1','Danh sách khách hàng ủy quyền',sup_title_format)
     headers = [
         'STT',
         'Tên khách hàng ủy quyền',
