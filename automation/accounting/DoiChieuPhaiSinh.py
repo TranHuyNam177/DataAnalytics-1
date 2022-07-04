@@ -273,7 +273,7 @@ class Report:
         worksheet.merge_range(f'A{sum_start_row}:B{sum_start_row}', 'Tổng cộng:', self.sum_format)
         worksheet.write_row(f'C{sum_start_row}', [''] * 2, self.sum_format)
         for col in 'EFGHIJ':
-            if col == 'E' or col == 'F':
+            if col in 'EF':
                 worksheet.write(f'{col}{sum_start_row}', f'=SUM({col}5:{col}{sum_start_row - 1})',
                                 self.money_sum_fds_format)
             else:
@@ -435,7 +435,7 @@ class Report:
         worksheet.write_row(f'B{sum_start_row}', [''] * 3, self.sum_format)
 
         for col in 'EFGHIJKLMNOPQRSTUVWXYZ':
-            if col == 'EFGHIJKLMN':
+            if col in 'EFGHIJKLMN':
                 worksheet.write(f'{col}{sum_start_row}', f'=SUM({col}5:{col}{sum_start_row - 1})',
                                 self.money_sum_fds_format)
             else:
