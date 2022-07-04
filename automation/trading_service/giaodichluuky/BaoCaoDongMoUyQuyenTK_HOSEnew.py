@@ -234,7 +234,12 @@ def run(
                     ELSE [authorization].[authorized_person_address]
                 END [authorized_person_address],
                 [authorization].[date_of_authorization],
-                'I,II,IV,V,VII,IX,X' [scope_of_authorization]
+                CASE
+                    WHEN [authorization].[scope_of_authorization] = 'I,II,IV,V,VII,IX,X' THEN '1,4,5'
+                    WHEN [authorization].[scope_of_authorization] = 'I,II,III,IV,V,VI,VII,VIII,IX,X' THEN '0'
+                    WHEN [authorization].[scope_of_authorization] = 'III' THEN '2'
+                    ELSE [authorization].[scope_of_authorization]
+                END [scope_of_authorization]
             FROM [authorization]  
             WHERE [authorization].[date_of_authorization] BETWEEN '{start_date}' AND '{end_date}'
                 AND [authorization].[scope_of_authorization] IS NOT NULL
