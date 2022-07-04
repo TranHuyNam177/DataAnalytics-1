@@ -932,8 +932,8 @@ def run(
         sheet_uyquyen.write(row+3,7,authorization.iloc[row,authorization.columns.get_loc('authorized_person_id')],fmt1)
         sheet_uyquyen.write(row+3,8,authorization.iloc[row,authorization.columns.get_loc('authorized_person_address')],fmt2)
         sheet_uyquyen.write(row+3,9,authorization.iloc[row,authorization.columns.get_loc('scope_of_authorization')],fmt1)
-        sheet_uyquyen.write_column(row+3,10,authorization.shape[0]*[''],fmt1)
-        sheet_uyquyen.write_column(row+3,11,authorization.shape[0]*[''],fmt2)
+    sheet_uyquyen.write_column('K4',authorization.shape[0]*[''],text_left_format)
+    sheet_uyquyen.write_column('L4',authorization.shape[0]*[''],text_left_format)
 
     ###########################################################################
     ###########################################################################
